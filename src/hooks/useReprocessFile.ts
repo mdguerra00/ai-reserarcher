@@ -20,12 +20,13 @@ export function useReprocessFile() {
 
       if (fileError || !file) throw new Error('Arquivo não encontrado');
 
-      // Create new extraction job
+      // Create new extraction job (use null for global files)
+      const effectiveProjectId = projectId || null;
       const { data: job, error: jobError } = await supabase
         .from('extraction_jobs')
         .insert({
           file_id: fileId,
-          project_id: projectId,
+          project_id: effectiveProjectId,
           created_by: user.id,
           file_hash: `reprocess_${Date.now()}`,
           status: 'pending',
