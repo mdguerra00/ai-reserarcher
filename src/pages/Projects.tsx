@@ -13,6 +13,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
   Plus,
   Search,
   FolderKanban,
@@ -158,42 +164,53 @@ export default function Projects() {
           )}
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredProjects.map((project) => (
-            <Link to={`/projects/${project.id}`} key={project.id}>
-              <Card className="h-full hover:border-primary/50 transition-colors cursor-pointer">
-                <CardHeader>
-                  <div className="flex items-start justify-between gap-2">
-                    <CardTitle className="line-clamp-1">{project.name}</CardTitle>
-                    <Badge className={statusColors[project.status]} variant="secondary">
-                      {statusLabels[project.status]}
-                    </Badge>
-                  </div>
-                  {project.category && (
-                    <Badge variant="outline" className="w-fit">
-                      {project.category}
-                    </Badge>
-                  )}
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {project.description && (
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {project.description}
-                    </p>
-                  )}
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                    {project.start_date && (
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {new Date(project.start_date).toLocaleDateString('pt-BR')}
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
+        <TooltipProvider delayDuration={1000}>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {filteredProjects.map((project) => (
+              <Tooltip key={project.id}>
+                <TooltipTrigger asChild>
+                  <Link to={`/projects/${project.id}`}>
+                    <Card className="h-full hover:border-primary/50 transition-colors cursor-pointer">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <CardTitle className="text-base font-semibold line-clamp-2 leading-snug">
+                            {project.name}
+                          </CardTitle>
+                          <Badge className={`${statusColors[project.status]} shrink-0 text-xs`} variant="secondary">
+                            {statusLabels[project.status]}
+                          </Badge>
+                        </div>
+                        {project.category && (
+                          <Badge variant="outline" className="w-fit text-xs">
+                            {project.category}
+                          </Badge>
+                        )}
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        {project.description && (
+                          <p className="text-sm text-muted-foreground line-clamp-2">
+                            {project.description}
+                          </p>
+                        )}
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                          {project.start_date && (
+                            <div className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {new Date(project.start_date).toLocaleDateString('pt-BR')}
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-xs">
+                  <p className="font-medium">{project.name}</p>
+                </TooltipContent>
+              </Tooltip>
+            ))}
+          </div>
+        </TooltipProvider>
       )}
     </div>
   );
