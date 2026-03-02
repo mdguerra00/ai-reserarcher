@@ -858,7 +858,7 @@ export type Database = {
           id: string
           job_type: string
           priority: number
-          project_id: string
+          project_id: string | null
           retry_count: number | null
           source_id: string | null
           source_type: string | null
@@ -874,7 +874,7 @@ export type Database = {
           id?: string
           job_type: string
           priority?: number
-          project_id: string
+          project_id?: string | null
           retry_count?: number | null
           source_id?: string | null
           source_type?: string | null
@@ -890,7 +890,7 @@ export type Database = {
           id?: string
           job_type?: string
           priority?: number
-          project_id?: string
+          project_id?: string | null
           retry_count?: number | null
           source_id?: string | null
           source_type?: string | null
