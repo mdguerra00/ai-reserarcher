@@ -29,6 +29,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useReprocessFile } from '@/hooks/useReprocessFile';
 import { DocumentItem } from './DocumentCard';
 import { KnowledgeItem, KnowledgeCategory } from './KnowledgeCard';
 
@@ -86,7 +87,7 @@ export function DocumentDetailModal({ item, open, onOpenChange }: DocumentDetail
   const [insights, setInsights] = useState<KnowledgeItem[]>([]);
   const [loadingInsights, setLoadingInsights] = useState(false);
   const [downloading, setDownloading] = useState(false);
-
+  const reprocessFile = useReprocessFile();
   useEffect(() => {
     if (open && item) {
       fetchInsights();
@@ -147,6 +148,18 @@ export function DocumentDetailModal({ item, open, onOpenChange }: DocumentDetail
     } finally {
       setDownloading(false);
     }
+  };
+
+  const handleReprocess = () => {
+    if (!item) return;
+    reprocessFile.mutate(
+      { fileId: item.id, projectId: item.project_id || '', force: true },
+      {
+        onSuccess: () => {
+          fetchInsights();
+        },
+      }
+    );
   };
 
   const handleViewProject = () => {
@@ -220,6 +233,18 @@ export function DocumentDetailModal({ item, open, onOpenChange }: DocumentDetail
               <h3 className="font-medium mb-3 flex items-center gap-2">
                 <Brain className="h-4 w-4 text-primary" />
                 Insights deste documento
+                {insights.length === 0 && !loadingInsights && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleReprocess}
+                    disabled={reprocessFile.isPending}
+                    className="ml-auto"
+                  >
+                    <RefreshCw className={`h-3 w-3 mr-1 ${reprocessFile.isPending ? 'animate-spin' : ''}`} />
+                    {reprocessFile.isPending ? 'Processando...' : 'Processar'}
+                  </Button>
+                )}
               </h3>
               
               {loadingInsights ? (
@@ -270,10 +295,22 @@ export function DocumentDetailModal({ item, open, onOpenChange }: DocumentDetail
         </ScrollArea>
 
         <div className="flex justify-between gap-2 pt-4 border-t">
-          <Button variant="outline" onClick={handleViewProject}>
-            <ExternalLink className="h-4 w-4 mr-2" />
-            Ver no Projeto
-          </Button>
+          <div className="flex gap-2">
+            {item.project_id && (
+              <Button variant="outline" onClick={handleViewProject}>
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Ver no Projeto
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              onClick={handleReprocess}
+              disabled={reprocessFile.isPending}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${reprocessFile.isPending ? 'animate-spin' : ''}`} />
+              {reprocessFile.isPending ? 'Processando...' : 'Reprocessar'}
+            </Button>
+          </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Fechar
