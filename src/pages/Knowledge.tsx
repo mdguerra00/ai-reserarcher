@@ -49,35 +49,49 @@ export default function Knowledge() {
   const [globalUploadOpen, setGlobalUploadOpen] = useState(false);
 
   const handleRunCorrelation = async () => {
-    if (!selectedProject && (!projects || projects.length === 0)) {
+    if (!projects || projects.length === 0) {
       toast.error('Nenhum projeto disponível');
       return;
     }
-    const projectId = selectedProject || projects?.[0]?.id;
-    if (!projectId) return;
+
+    // If a project is selected, correlate only that one; otherwise correlate ALL projects
+    const projectIds = selectedProject ? [selectedProject] : projects.map(p => p.id);
 
     setRunningCorrelation(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) throw new Error('Não autenticado');
 
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/correlate-metrics`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({ project_id: projectId }),
-        }
+      let totalPatterns = 0, totalContradictions = 0, totalGaps = 0;
+
+      // Run correlation for each project
+      const results = await Promise.all(
+        projectIds.map(async (pid) => {
+          const response = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/correlate-metrics`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.access_token}`,
+              },
+              body: JSON.stringify({ project_id: pid }),
+            }
+          );
+          const data = await response.json();
+          if (!response.ok) console.warn(`Correlation failed for project ${pid}:`, data.error);
+          return data;
+        })
       );
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Erro');
+      for (const data of results) {
+        totalPatterns += data.patterns || 0;
+        totalContradictions += data.contradictions || 0;
+        totalGaps += data.gaps || 0;
+      }
 
       toast.success(
-        `Análise concluída: ${data.patterns} padrões, ${data.contradictions} contradições, ${data.gaps} lacunas`,
+        `Análise concluída: ${totalPatterns} padrões, ${totalContradictions} contradições, ${totalGaps} lacunas`,
         { duration: 5000 }
       );
       refetchInsights();
