@@ -44,7 +44,21 @@ export function KanbanCard({ task, members, onClick, isDragOverlay }: KanbanCard
   const assignee = members.find(m => m.user_id === task.assigned_to);
   const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'done';
   const isBlocked = task.status === 'blocked';
+  const isDone = task.status === 'done';
   const priority = priorityConfig[task.priority] || priorityConfig.medium;
+
+  // Decision-based coloring for completed tasks
+  const getDecisionStyle = () => {
+    if (!isDone || !task.decision) return '';
+    switch (task.decision) {
+      case 'approved':
+        return 'border-green-500/50 bg-green-500/10';
+      case 'discarded':
+        return 'border-red-500/50 bg-red-500/10';
+      default:
+        return 'border-yellow-500/50 bg-yellow-500/10';
+    }
+  };
 
   const getInitials = (name?: string | null, email?: string) => {
     if (name) return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -64,7 +78,8 @@ export function KanbanCard({ task, members, onClick, isDragOverlay }: KanbanCard
         ${isDragging ? 'opacity-30' : ''}
         ${isDragOverlay ? 'shadow-lg rotate-2 scale-105' : ''}
         ${isBlocked ? 'border-destructive/30 bg-destructive/5' : ''}
-        ${isOverdue ? 'border-warning/30' : ''}
+        ${isOverdue && !isDone ? 'border-warning/30' : ''}
+        ${getDecisionStyle()}
       `}
     >
       {/* Priority + Blocked indicator */}
@@ -77,6 +92,20 @@ export function KanbanCard({ task, members, onClick, isDragOverlay }: KanbanCard
           {isOverdue && <AlertTriangle className="h-3 w-3 text-warning" />}
         </div>
       </div>
+
+      {/* Decision badge for completed tasks */}
+      {isDone && task.decision && (
+        <div className={`text-[10px] font-medium mb-2 px-1.5 py-0.5 rounded-md inline-block ${
+          task.decision === 'approved' ? 'bg-green-500/20 text-green-700 dark:text-green-400' :
+          task.decision === 'discarded' ? 'bg-red-500/20 text-red-700 dark:text-red-400' :
+          'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400'
+        }`}>
+          {task.decision === 'approved' ? '✅ Aprovado' :
+           task.decision === 'discarded' ? '❌ Descartado' :
+           task.decision === 'adjust' ? '🔧 Ajustar' :
+           task.decision === 'repeat' ? '🔄 Repetir' : task.decision}
+        </div>
+      )}
 
       {/* Title */}
       <p className="text-sm font-medium line-clamp-2 mb-2">{task.title}</p>
