@@ -244,8 +244,9 @@ export function TaskDetailDrawer({
         <Input
           placeholder={placeholder}
           value={newValue}
-          onChange={e => setNewValue(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addArrayItem(items, setItems, newValue, setNewValue); } }}
+          onChange={e => { e.stopPropagation(); setNewValue(e.target.value); }}
+          onKeyDown={e => { e.stopPropagation(); if (e.key === 'Enter') { e.preventDefault(); addArrayItem(items, setItems, newValue, setNewValue); } }}
+          onFocus={e => e.stopPropagation()}
           className="h-8 text-sm"
         />
         <Button size="sm" variant="outline" className="h-8 px-2" onClick={() => addArrayItem(items, setItems, newValue, setNewValue)}>
@@ -348,14 +349,16 @@ export function TaskDetailDrawer({
               <Input
                 placeholder="Nova tag..."
                 value={newTag}
-                onChange={e => setNewTag(e.target.value)}
+                onChange={e => { e.stopPropagation(); setNewTag(e.target.value); }}
                 onKeyDown={async e => {
+                  e.stopPropagation();
                   if (e.key === 'Enter' && newTag.trim()) {
                     e.preventDefault();
                     await handleFieldUpdate('tags', [...(task.tags || []), newTag.trim()]);
                     setNewTag('');
                   }
                 }}
+                onFocus={e => e.stopPropagation()}
                 className="h-7 text-xs"
               />
             </div>
@@ -482,14 +485,16 @@ export function TaskDetailDrawer({
                 <Input
                   placeholder="Novo item..."
                   value={newCheckItem}
-                  onChange={e => setNewCheckItem(e.target.value)}
+                  onChange={e => { e.stopPropagation(); setNewCheckItem(e.target.value); }}
                   onKeyDown={e => {
+                    e.stopPropagation();
                     if (e.key === 'Enter' && newCheckItem.trim()) {
                       e.preventDefault();
                       setChecklist([...checklist, { text: newCheckItem.trim(), done: false }]);
                       setNewCheckItem('');
                     }
                   }}
+                  onFocus={e => e.stopPropagation()}
                   className="h-8 text-sm"
                 />
                 <Button size="sm" variant="outline" className="h-8" onClick={() => {
