@@ -409,22 +409,8 @@ export function TaskDetailDrawer({
                 rows={3}
               />
             </div>
-            <ArrayField
-              label="Variáveis alteradas"
-              items={variablesChanged}
-              setItems={setVariablesChanged}
-              newValue={newVariable}
-              setNewValue={setNewVariable}
-              placeholder="Ex: concentração UDMA"
-            />
-            <ArrayField
-              label="Métricas alvo"
-              items={targetMetrics}
-              setItems={setTargetMetrics}
-              newValue={newMetric}
-              setNewValue={setNewMetric}
-              placeholder="Ex: resistência flexural"
-            />
+            {renderArrayField("Variáveis alteradas", variablesChanged, setVariablesChanged, newVariable, setNewVariable, "Ex: concentração UDMA")}
+            {renderArrayField("Métricas alvo", targetMetrics, setTargetMetrics, newMetric, setNewMetric, "Ex: resistência flexural")}
             <div>
               <label className="text-sm font-medium text-muted-foreground mb-1 block">Critério de sucesso</label>
               <Textarea
@@ -505,14 +491,7 @@ export function TaskDetailDrawer({
             </div>
 
             {/* External links */}
-            <ArrayField
-              label="Links externos"
-              items={externalLinks}
-              setItems={setExternalLinks}
-              newValue={newLink}
-              setNewValue={setNewLink}
-              placeholder="https://..."
-            />
+            {renderArrayField("Links externos", externalLinks, setExternalLinks, newLink, setNewLink, "https://...")}
 
             <Button onClick={handleSaveRnD} disabled={saving} size="sm" className="w-full">
               {saving ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <Save className="mr-2 h-3 w-3" />}
