@@ -224,29 +224,25 @@ export function TaskDetailDrawer({
     setArr(arr.filter((_, i) => i !== index));
   };
 
-  const ArrayField = ({ label, items, setItems, newValue, setNewValue, placeholder }: {
-    label: string; items: string[]; setItems: (v: string[]) => void;
-    newValue: string; setNewValue: (v: string) => void; placeholder: string;
-  }) => (
+  const renderArrayField = (label: string, items: string[], setItems: (v: string[]) => void, newValue: string, setNewValue: (v: string) => void, placeholder: string) => (
     <div>
       <label className="text-sm font-medium text-muted-foreground mb-1 block">{label}</label>
       <div className="flex flex-wrap gap-1.5 mb-2">
         {items.map((item, i) => (
-          <Badge key={i} variant="secondary" className="gap-1 pr-1">
+          <span key={i} className="inline-flex items-center gap-1 pr-1 rounded-md border px-2.5 py-0.5 text-xs font-semibold bg-secondary text-secondary-foreground">
             {item}
             <button onClick={() => removeArrayItem(items, setItems, i)} className="hover:text-destructive">
               <X className="h-3 w-3" />
             </button>
-          </Badge>
+          </span>
         ))}
       </div>
       <div className="flex gap-2">
         <Input
           placeholder={placeholder}
           value={newValue}
-          onChange={e => { e.stopPropagation(); setNewValue(e.target.value); }}
-          onKeyDown={e => { e.stopPropagation(); if (e.key === 'Enter') { e.preventDefault(); addArrayItem(items, setItems, newValue, setNewValue); } }}
-          onFocus={e => e.stopPropagation()}
+          onChange={e => setNewValue(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addArrayItem(items, setItems, newValue, setNewValue); } }}
           className="h-8 text-sm"
         />
         <Button size="sm" variant="outline" className="h-8 px-2" onClick={() => addArrayItem(items, setItems, newValue, setNewValue)}>
@@ -413,22 +409,8 @@ export function TaskDetailDrawer({
                 rows={3}
               />
             </div>
-            <ArrayField
-              label="Variáveis alteradas"
-              items={variablesChanged}
-              setItems={setVariablesChanged}
-              newValue={newVariable}
-              setNewValue={setNewVariable}
-              placeholder="Ex: concentração UDMA"
-            />
-            <ArrayField
-              label="Métricas alvo"
-              items={targetMetrics}
-              setItems={setTargetMetrics}
-              newValue={newMetric}
-              setNewValue={setNewMetric}
-              placeholder="Ex: resistência flexural"
-            />
+            {renderArrayField("Variáveis alteradas", variablesChanged, setVariablesChanged, newVariable, setNewVariable, "Ex: concentração UDMA")}
+            {renderArrayField("Métricas alvo", targetMetrics, setTargetMetrics, newMetric, setNewMetric, "Ex: resistência flexural")}
             <div>
               <label className="text-sm font-medium text-muted-foreground mb-1 block">Critério de sucesso</label>
               <Textarea
@@ -509,14 +491,7 @@ export function TaskDetailDrawer({
             </div>
 
             {/* External links */}
-            <ArrayField
-              label="Links externos"
-              items={externalLinks}
-              setItems={setExternalLinks}
-              newValue={newLink}
-              setNewValue={setNewLink}
-              placeholder="https://..."
-            />
+            {renderArrayField("Links externos", externalLinks, setExternalLinks, newLink, setNewLink, "https://...")}
 
             <Button onClick={handleSaveRnD} disabled={saving} size="sm" className="w-full">
               {saving ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <Save className="mr-2 h-3 w-3" />}
