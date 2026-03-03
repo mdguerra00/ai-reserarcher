@@ -93,6 +93,20 @@ export function KanbanCard({ task, members, onClick, isDragOverlay }: KanbanCard
         </div>
       </div>
 
+      {/* Decision badge for completed tasks */}
+      {isDone && task.decision && (
+        <div className={`text-[10px] font-medium mb-2 px-1.5 py-0.5 rounded-md inline-block ${
+          task.decision === 'approved' ? 'bg-green-500/20 text-green-700 dark:text-green-400' :
+          task.decision === 'discarded' ? 'bg-red-500/20 text-red-700 dark:text-red-400' :
+          'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400'
+        }`}>
+          {task.decision === 'approved' ? '✅ Aprovado' :
+           task.decision === 'discarded' ? '❌ Descartado' :
+           task.decision === 'adjust' ? '🔧 Ajustar' :
+           task.decision === 'repeat' ? '🔄 Repetir' : task.decision}
+        </div>
+      )}
+
       {/* Title */}
       <p className="text-sm font-medium line-clamp-2 mb-2">{task.title}</p>
 
