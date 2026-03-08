@@ -130,6 +130,38 @@ const App = () => (
                 </AppLayout>
               }
             />
+            <Route
+              path="/products"
+              element={
+                <AppLayout>
+                  <ProductsCatalog />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/products/:id"
+              element={
+                <AppLayout>
+                  <ProductDetailPage />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/researches"
+              element={
+                <AppLayout>
+                  <Researches />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/researches/:id"
+              element={
+                <AppLayout>
+                  <ResearchDetail />
+                </AppLayout>
+              }
+            />
 
             {/* 404 */}
             <Route path="*" element={<NotFound />} />

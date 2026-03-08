@@ -35,6 +35,8 @@ import {
   User,
   MessageCircle,
   Shield,
+  Package,
+  Microscope,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdminRole } from '@/hooks/useAdminRole';
@@ -42,12 +44,17 @@ import { useAdminRole } from '@/hooks/useAdminRole';
 const mainNavItems = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboard },
   { title: 'Assistente IA', url: '/assistant', icon: MessageCircle },
+];
+
+const productNavItems = [
+  { title: 'Produtos', url: '/products', icon: Package },
+  { title: 'Pesquisas', url: '/researches', icon: Microscope },
   { title: 'Projetos', url: '/projects', icon: FolderKanban },
   { title: 'Tarefas', url: '/tasks', icon: CheckSquare },
   { title: 'Relatórios', url: '/reports', icon: FileText },
 ];
 
-const secondaryNavItems = [
+const resourceNavItems = [
   { title: 'Arquivos', url: '/files', icon: FolderOpen },
   { title: 'Base de Conhecimento', url: '/knowledge', icon: Brain },
 ];
