@@ -17,6 +17,7 @@ import {
   PanelLeftClose,
   FileSearch,
   Plus,
+  Trash2,
 } from 'lucide-react';
 import { useAssistantChat } from '@/hooks/useAssistantChat';
 import { ChatMessage } from '@/components/assistant/ChatMessage';
