@@ -263,7 +263,6 @@ export default function Assistant() {
                   <ChatMessage
                     key={message.id}
                     message={message}
-                    onSourceClick={handleSourceClick}
                     userQuestion={
                       message.role === 'assistant'
                         ? getUserQuestionBefore(index)
