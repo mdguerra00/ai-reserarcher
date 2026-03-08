@@ -19,8 +19,18 @@ import { toast } from '@/hooks/use-toast';
 
 interface ChatMessageProps {
   message: ChatMessageType;
-  onSourceClick?: (citation: string) => void;
-  userQuestion?: string; // The preceding user message for evidence
+  onSourceClick?: (citation: string) => void; // kept for backward compat but unused
+  userQuestion?: string;
+}
+
+function getSourceRoute(source: { type?: string; id?: string }): string | null {
+  const t = source.type?.toLowerCase() || '';
+  if (t.includes('task')) return '/tasks';
+  if (t.includes('report')) return '/reports';
+  if (t.includes('knowledge') || t.includes('insight')) return '/knowledge';
+  if (t.includes('file') || t.includes('excel')) return '/files';
+  if (t.includes('experiment') || t.includes('measurement')) return '/knowledge';
+  return null;
 }
 
 export function ChatMessage({ message, onSourceClick, userQuestion }: ChatMessageProps) {
