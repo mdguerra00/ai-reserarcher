@@ -245,7 +245,7 @@ Acompanhe as tarefas atribuídas a você
         </Card>
       ) : (
         <div className="space-y-3">
-          {filteredTasks.map((task) => (
+          {paginatedTasks.map((task) => (
             <Card 
               key={task.id} 
               className="hover:border-primary/50 transition-colors cursor-pointer"
@@ -298,6 +298,33 @@ Acompanhe as tarefas atribuídas a você
               </CardContent>
             </Card>
           ))}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between pt-4">
+              <p className="text-sm text-muted-foreground">
+                {filteredTasks.length} tarefa{filteredTasks.length !== 1 ? 's' : ''} • Página {currentPage} de {totalPages}
+              </p>
+              <div className="flex gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Anterior
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Próxima
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
