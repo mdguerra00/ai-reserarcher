@@ -156,7 +156,6 @@ export function ProjectAssistant({ projectId, projectName }: ProjectAssistantPro
                   <ChatMessage
                     key={message.id}
                     message={message}
-                    onSourceClick={handleSourceClick}
                   />
                 ))}
                 {isLoading && (
