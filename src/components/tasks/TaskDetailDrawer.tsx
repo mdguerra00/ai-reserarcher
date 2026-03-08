@@ -218,9 +218,24 @@ export function TaskDetailDrawer({
         .eq('id', task.id);
       if (error) throw error;
 
-      // Auto-create knowledge item when task is done and has conclusion + decision
-      if (task.status === 'done' && conclusion.trim() && decision) {
-        await createKnowledgeFromTask();
+      // Auto-create knowledge item when task is done
+      if (task.status === 'done') {
+        const { createKnowledgeFromTask } = await import('@/hooks/useTaskKnowledge');
+        await createKnowledgeFromTask({
+          id: task.id,
+          title: editTitle,
+          hypothesis,
+          variables_changed: variablesChanged,
+          target_metrics: targetMetrics,
+          success_criteria: successCriteria,
+          procedure,
+          checklist,
+          partial_results: partialResults,
+          conclusion,
+          decision: decision || null,
+          external_links: externalLinks,
+          tags: task.tags || [],
+        }, user.id, projectId);
       }
 
       toast({ title: 'Salvo', description: 'Dados atualizados com sucesso.' });
