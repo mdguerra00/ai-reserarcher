@@ -247,62 +247,6 @@ export function TaskDetailDrawer({
     }
   };
 
-  const createKnowledgeFromTask = async () => {
-    if (!user) return;
-    try {
-      // Check if knowledge already exists for this task
-      const { data: existing } = await supabase
-        .from('knowledge_items')
-        .select('id')
-        .eq('project_id', projectId)
-        .eq('title', `[Tarefa] ${editTitle}`)
-        .limit(1);
-
-      if (existing && existing.length > 0) {
-        // Update existing
-        await supabase
-          .from('knowledge_items')
-          .update({
-            content: buildKnowledgeContent(),
-          })
-          .eq('id', existing[0].id);
-        return;
-      }
-
-      // Create new knowledge item
-      await supabase
-        .from('knowledge_items')
-        .insert({
-          project_id: projectId,
-          title: `[Tarefa] ${editTitle}`,
-          content: buildKnowledgeContent(),
-          category: 'conclusion' as any,
-          extracted_by: user.id,
-          confidence: decision === 'approved' ? 0.9 : decision === 'discarded' ? 0.3 : 0.6,
-          human_verified: true,
-          evidence: conclusion,
-        });
-    } catch (err) {
-      console.error('Erro ao criar conhecimento da tarefa:', err);
-    }
-  };
-
-  const buildKnowledgeContent = () => {
-    const decisionLabel = decision === 'approved' ? 'Aprovado' :
-      decision === 'discarded' ? 'Descartado' :
-      decision === 'adjust' ? 'Ajustar formulação' :
-      decision === 'repeat' ? 'Repetir teste' : decision;
-
-    const parts: string[] = [];
-    parts.push(`**Decisão:** ${decisionLabel}`);
-    if (hypothesis) parts.push(`**Hipótese:** ${hypothesis}`);
-    if (variablesChanged.length > 0) parts.push(`**Variáveis alteradas:** ${variablesChanged.join(', ')}`);
-    if (targetMetrics.length > 0) parts.push(`**Métricas alvo:** ${targetMetrics.join(', ')}`);
-    if (successCriteria) parts.push(`**Critério de sucesso:** ${successCriteria}`);
-    if (partialResults) parts.push(`**Resultados:** ${partialResults}`);
-    if (conclusion) parts.push(`**Conclusão:** ${conclusion}`);
-    return parts.join('\n\n');
-  };
 
   const addArrayItem = (arr: string[], setArr: (v: string[]) => void, value: string, setInput: (v: string) => void) => {
     if (value.trim()) {
