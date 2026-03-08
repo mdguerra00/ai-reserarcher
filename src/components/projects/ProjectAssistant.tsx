@@ -60,12 +60,6 @@ export function ProjectAssistant({ projectId, projectName }: ProjectAssistantPro
     sendMessage(question);
   };
 
-  const handleSourceClick = (citation: string) => {
-    setHighlightedCitation(citation);
-    setShowSources(true);
-    // Clear highlight after 2 seconds
-    setTimeout(() => setHighlightedCitation(undefined), 2000);
-  };
 
   const hasMessages = messages.length > 0;
 
