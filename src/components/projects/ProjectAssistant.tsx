@@ -112,19 +112,6 @@ export function ProjectAssistant({ projectId, projectName }: ProjectAssistantPro
               <FileSearch className="h-3 w-3" />
               Analisar
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowSources(!showSources)}
-              className="h-8 gap-1 text-xs"
-            >
-              {showSources ? (
-                <PanelRightClose className="h-3 w-3" />
-              ) : (
-                <PanelRightOpen className="h-3 w-3" />
-              )}
-              Fontes
-            </Button>
           </div>
         </div>
 
