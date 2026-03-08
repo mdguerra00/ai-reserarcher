@@ -10,7 +10,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Bot, User, AlertCircle, Lightbulb, DatabaseZap, Loader2, Check } from 'lucide-react';
+import { Bot, User, AlertCircle, Lightbulb, DatabaseZap, Loader2, Check, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ChatMessage as ChatMessageType } from '@/hooks/useAssistantChat';
 import { SaveInsightModal } from './SaveInsightModal';
