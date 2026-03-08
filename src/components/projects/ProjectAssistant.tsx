@@ -206,17 +206,6 @@ export function ProjectAssistant({ projectId, projectName }: ProjectAssistantPro
         </div>
       </div>
 
-      {/* Sources Panel */}
-      {showSources && (
-        <div className="w-72 border-l hidden md:block">
-          <SourcesPanel
-            sources={allSources}
-            highlightedCitation={highlightedCitation}
-            onClose={() => setShowSources(false)}
-            projectContext={projectName}
-          />
-        </div>
-      )}
 
       {/* Analyze File Picker */}
       <AnalyzeFilePicker
