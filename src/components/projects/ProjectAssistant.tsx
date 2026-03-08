@@ -30,7 +30,6 @@ export function ProjectAssistant({ projectId, projectName }: ProjectAssistantPro
   const [showFilePicker, setShowFilePicker] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   // Dynamic suggested questions based on project context
   const suggestedQuestions = [
