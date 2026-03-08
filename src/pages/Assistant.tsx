@@ -221,28 +221,6 @@ export default function Assistant() {
               </AlertDialog>
             )}
 
-            <Separator orientation="vertical" className="h-4 mx-1" />
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={showSources ? 'secondary' : 'ghost'}
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => setShowSources(!showSources)}
-                >
-                  {showSources ? (
-                    <PanelRightClose className="h-3.5 w-3.5" />
-                  ) : (
-                    <PanelRightOpen className="h-3.5 w-3.5" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                {showSources ? 'Ocultar fontes' : 'Mostrar fontes'}
-                {allSources.length > 0 && ` (${allSources.length})`}
-              </TooltipContent>
-            </Tooltip>
           </div>
         </div>
 
