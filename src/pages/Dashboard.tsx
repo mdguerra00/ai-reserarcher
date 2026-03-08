@@ -50,7 +50,7 @@ export default function Dashboard() {
 
       // Tasks by project for chart
       const projectMap = new Map<string, { name: string; total: number; done: number }>();
-      projects?.forEach(p => projectMap.set(p.id, { name: p.name.length > 15 ? p.name.slice(0, 15) + '…' : p.name, total: 0, done: 0 }));
+      projects?.forEach(p => projectMap.set(p.id, { name: p.name.length > 25 ? p.name.slice(0, 25) + '…' : p.name, total: 0, done: 0 }));
       tasks?.forEach(t => {
         const proj = projectMap.get(t.project_id);
         if (proj) {

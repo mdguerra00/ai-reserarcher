@@ -33,10 +33,10 @@ export function DashboardCharts({ tasksByProject, tasksByStatus }: DashboardChar
             <CardTitle className="text-sm font-medium">Tarefas por Projeto</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={tasksByProject.slice(0, 6)} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={tasksByProject.slice(0, 6)} margin={{ top: 5, right: 5, left: -20, bottom: 60 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis dataKey="name" tick={{ fontSize: 11 }} className="text-muted-foreground" />
+                <XAxis dataKey="name" tick={{ fontSize: 11, width: 100 }} className="text-muted-foreground" angle={-35} textAnchor="end" interval={0} height={60} />
                 <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
                 <Tooltip
                   contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))', background: 'hsl(var(--card))' }}
