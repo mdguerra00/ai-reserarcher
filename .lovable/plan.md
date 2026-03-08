@@ -1,77 +1,131 @@
 
 
-# Avaliação Geral do Aplicativo — Smart Dent Manager 2.2
+# Auto-Alias + Provisional Auto-Pass: Implementation Plan
 
-## Visão Geral
+## Overview
 
-O Smart Dent Manager é um sistema de gestão de P&D para materiais odontológicos, construído com React 18 + TypeScript + Tailwind + Lovable Cloud (Supabase). É um sistema robusto e funcional com 10 módulos principais.
-
----
-
-## Pontos Fortes
-
-| Aspecto | Avaliação |
-|---------|-----------|
-| **Arquitetura** | Bem estruturada: separação clara entre páginas, componentes, hooks e edge functions |
-| **Autenticação e Segurança** | RLS completo em todas as tabelas; sistema de roles via `user_roles` (padrão correto); verificação de status disabled no login |
-| **Pipeline RAG/IA** | Sofisticado — 3 pipelines (Standard, IDER, Comparative, Tabular), busca híbrida (vetorial + full-text), sistema de aliases com auto-pass, cache KV |
-| **Base de Conhecimento** | Completa — insights, documentos, experimentos, facts manuais autoritativos com versionamento |
-| **Kanban de Tarefas** | Drag-and-drop funcional com WIP limits, coluna bloqueada com razão obrigatória, log de atividade |
-| **Processamento de Arquivos** | Suporte a PDF, Excel, Word; extração automática de conhecimento; versionamento |
-| **Relatórios** | Geração por IA com ciclo de vida (draft → approved); detecção de relatórios desatualizados |
-| **Admin** | Gestão de usuários, aliases, criação de contas |
-| **UI/UX** | Design system consistente (shadcn/ui), sidebar navegável, busca global, tooltips |
+Create a dynamic alias system with 3 new tables (`entity_aliases`, `alias_cache`, `migration_logs`), integration into `quickEvidenceCheck`, KV cache with pg_cron cleanup, and Admin UI with "Aliases" tab including status filters and soft-delete.
 
 ---
 
-## Pontos de Atenção e Oportunidades de Melhoria
+## Step 1: SQL Migration
 
-### 1. Código e Manutenibilidade
-| Item | Severidade | Detalhe |
-|------|-----------|---------|
-| `rag-answer/index.ts` — 4017 linhas | Media | Arquivo monolítico. Dificulta manutenção e testes. Candidato a split em módulos (alias, facts, pipelines) |
-| `TaskDetailDrawer.tsx` | Media | Componente provavelmente grande com lógica mista (UI + persistência + knowledge creation). Candidato a extração de hooks |
-| Uso de `(supabase as any)` | Baixa | Presente em alguns componentes. Types já foram atualizados, pode ser limpo |
+Create migration with:
 
-### 2. Performance e UX
-| Item | Severidade | Detalhe |
-|------|-----------|---------|
-| Dashboard faz queries sem cache | Media | Usa `useEffect` direto em vez de `useQuery` do TanStack (que já está instalado). Sem cache, refetch automático ou loading states otimizados |
-| Tasks page — query sem paginação | Media | Busca todas as tarefas do usuário sem limite. Pode ficar lento com volume |
-| Knowledge page — correlação sequencial | Baixa | `Promise.all` por projeto é bom, mas sem feedback de progresso individual |
+### Tables
 
-### 3. Funcionalidades Ausentes ou Incompletas
-| Item | Impacto |
-|------|---------|
-| **Notificações** | Não existe sistema de notificações (tarefas atribuídas, relatórios aprovados, etc.) |
-| **Dashboard superficial** | Apenas 4 cards de stats e links rápidos. Sem gráficos de tendência, timeline de atividades, ou métricas de progresso por projeto |
-| **Mobile** | Layout usa sidebar fixa; responsividade básica mas sem otimização dedicada para mobile |
-| **Offline / PWA** | Sem suporte offline |
-| **Testes** | Apenas testes unitários nas edge functions (alias, ider, tabular). Zero testes no frontend (componentes, páginas, hooks) |
-| **i18n** | Hardcoded em português. Sem sistema de internacionalização |
+**entity_aliases** - Main alias store with pgvector embedding, pg_trgm GIN index, HNSW vector index, unique constraint on (entity_type, alias_norm) where not deleted. Fields include id, entity_type, canonical_name, alias, alias_norm, confidence, approved, source, needs_review, rejection_reason, created_at, approved_by, approved_at, deleted_at, embedding vector(1536).
 
-### 4. Segurança
-| Item | Status |
+RLS:
+- SELECT for authenticated users
+- ALL for admin via has_role
+- ALL for service_role (explicit bypass)
+
+**alias_cache** - KV cache with (term_norm, entity_type) composite PK, result jsonb, cached_at, hit_count. RLS: service_role only. pg_cron job every 10min to clean entries older than 30min.
+
+**migration_logs** - Simple log table (id, message, created_at). RLS: service_role only.
+
+### Seed
+
+Populate ~100+ aliases from:
+- metrics_catalog (65 entries with aliases arrays)
+- Hardcoded additive aliases (silver_nanoparticles, silica_nanoparticle, bomar, tegdma, udma, bisgma, hals, uv_absorber, antioxidant)
+- Hardcoded material aliases (vitality, filtek, charisma, tetric, grandio, z350, z250, brilliant, herculite, clearfil, estelite, ips, ceram, nextdent, keysplint, luxaprint)
+
+All with approved=true, source='legacy_hardcoded', confidence=1.0. Use ON CONFLICT DO NOTHING, log collisions to migration_logs.
+
+---
+
+## Step 2: Edge Function Changes (rag-answer/index.ts)
+
+### 2a. Configurable Constants (top of file)
+
+```
+const STRUCTURAL_WEIGHT = 1.0;
+const CHUNK_WEIGHT = 0.5;
+const CHUNK_EVIDENCE_THRESHOLD = 0.75;
+const ALIAS_AUTOPASS_THRESHOLD = 0.80;
+const ALIAS_SUGGEST_THRESHOLD = 0.70;
+const ALIAS_AMBIGUITY_DELTA = 0.05;
+const MAX_UNKNOWN_TERMS_PER_QUERY = 5;
+```
+
+### 2b. normalizeTermWithUnits helper
+
+Converts:
+- X microns/um -> X*1000 nm
+- X Pa.s -> X*1000 mPa.s
+- Lowercase + unaccent
+
+Returns { original, normalized, ruleApplied }.
+
+### 2c. suggestAlias function
+
+1. Normalize term
+2. Check alias_cache (TTL 30min) - if hit, increment hit_count and return
+3. Exact match in entity_aliases (alias_norm = term_norm AND approved AND NOT deleted)
+4. If not found, generate embedding via text-embedding-3-small (LOVABLE_API_KEY)
+5. Vector search top-3 in entity_aliases
+6. Conflict detection: delta top1-top2 < 0.05 -> ambiguous=true
+7. Save result to alias_cache (upsert)
+8. Limit: max 5 unknown terms per query
+
+### 2d. Gating update in quickEvidenceCheck
+
+For each constraint not found by hardcoded maps:
+1. Query entity_aliases for approved exact match
+2. If approved match -> strong match
+3. If not -> suggestAlias:
+   - Provisional auto-pass: score >= 0.80 AND !ambiguous AND textualEvidence=true
+   - textualEvidence with explicit weight: title/conditions/metrics = 1.0, chunks = 0.5 (only if score > 0.75)
+   - Conflict -> fail-closed reason='ambiguous_alias'
+   - Score < 0.80 or no evidence -> fail-closed reason='suggested_alias_pending'
+4. Persistence: score >= 0.70 and alias doesn't exist -> upsert entity_aliases with approved=false, source='user_query_suggest'
+
+### 2e. Diagnostics expansion
+
+Add to DiagnosticsInput and buildDiagnostics:
+- suggested_aliases array with full details per term
+- alias_lookup_latency_ms
+- textual_evidence_weight_calculated
+- If alias_lookup_latency_ms > 500, add 'alias_lookup_slow' to verification.issue_types
+
+---
+
+## Step 3: Admin UI
+
+### 3a. New AliasApprovalTab component
+
+`src/components/admin/AliasApprovalTab.tsx`:
+- Table listing entity_aliases
+- Search input by alias_norm or canonical_name (ILIKE)
+- Status filter: All / Pending / Approved / Rejected
+- Status column with colored badges (green=approved, yellow=pending, red=rejected)
+- Actions: Approve, Reject (soft-delete with required rejection_reason), Restore, Edit canonical_name
+- Rejection reason column
+
+### 3b. Admin.tsx integration
+
+Add "Aliases" tab with BookText icon to existing tabs.
+
+---
+
+## Files Modified
+
+| File | Change |
 |------|--------|
-| RLS em todas as tabelas | OK |
-| Roles via tabela separada | OK |
-| Verificação admin via `has_role()` security definer | OK |
-| Verificação de usuário disabled no login | OK |
-| Rota `/admin` sem guard server-side | Atenção — a rota é renderizada se `isAdmin` (client-side hook), mas o conteúdo é protegido por RLS nas queries |
+| New SQL migration | 3 tables + indexes + RLS + pg_cron + seed |
+| `supabase/functions/rag-answer/index.ts` | normalizeTermWithUnits, suggestAlias, KV cache, gating with entity_aliases, configurable constants, expanded diagnostics |
+| `src/pages/Admin.tsx` | New "Aliases" tab |
+| `src/components/admin/AliasApprovalTab.tsx` | New component |
 
----
+## Safety Constraints
 
-## Resumo Executivo
-
-| Dimensão | Nota (1-5) | Comentário |
-|----------|-----------|------------|
-| Funcionalidade | 4.5 | Cobertura ampla e profunda para um sistema de P&D |
-| Arquitetura | 4.0 | Boa separação, mas edge function monolítica precisa de refactor |
-| Segurança | 4.5 | RLS robusto, roles corretas, service_role bem isolado |
-| UX/Design | 3.5 | Consistente mas dashboard básico, sem notificações, tooltips recém-adicionados |
-| Performance | 3.5 | Funcional mas sem paginação, cache inconsistente (useQuery em alguns, useEffect em outros) |
-| Testabilidade | 2.0 | Testes apenas no backend; frontend sem cobertura |
-| Manutenibilidade | 3.5 | Componentes bem organizados mas alguns arquivos muito grandes |
-
-**Nota geral: 3.6/5** — Sistema funcional e completo para seu propósito, com arquitetura sólida e segurança bem implementada. As maiores oportunidades estão em: padronizar data fetching (useQuery em todos os lugares), adicionar dashboard analítico rico, implementar notificações, e melhorar testabilidade.
+1. Auto-pass only with structural evidence (weight 1.0 for title/conditions/metrics; 0.5 for chunks with threshold 0.75)
+2. Unit normalization lossless (ruleApplied recorded; no nano/micro reclassification)
+3. Canonical conflict blocks auto-pass (delta < 0.05 -> ambiguous_alias)
+4. Max 5 unknown terms per query
+5. All suggestions enter as approved=false
+6. KV cache TTL 30min with pg_cron cleanup + hit_count increment
+7. Explicit service role bypass in RLS
 

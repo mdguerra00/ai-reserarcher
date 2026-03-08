@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   FolderKanban,
@@ -15,67 +15,74 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-
-interface DashboardStats {
-  totalProjects: number;
-  activeProjects: number;
-  totalTasks: number;
-  pendingTasks: number;
-  myTasks: number;
-}
+import { DashboardCharts } from '@/components/dashboard/DashboardCharts';
+import { RecentActivity } from '@/components/dashboard/RecentActivity';
 
 const isActiveProjectStatus = (status: string) => !['completed', 'archived'].includes(status);
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function fetchStats() {
-      if (!user) return;
+  const { data: stats, isLoading: loading } = useQuery({
+    queryKey: ['dashboard-stats', user?.id],
+    queryFn: async () => {
+      const { data: projects } = await supabase
+        .from('projects')
+        .select('id, name, status')
+        .is('deleted_at', null);
 
-      try {
-        // Buscar projetos do usuário
-        const { data: projects } = await supabase
-          .from('projects')
-          .select('id, status')
-          .is('deleted_at', null);
+      const { data: tasks } = await supabase
+        .from('tasks')
+        .select('id, status, assigned_to, project_id')
+        .is('deleted_at', null);
 
-        // Buscar tarefas
-        const { data: tasks } = await supabase
-          .from('tasks')
-          .select('id, status, assigned_to, project_id')
-          .is('deleted_at', null);
+      const totalProjects = projects?.length || 0;
+      const activeProjectsByStatus = projects?.filter((p) => isActiveProjectStatus(p.status)).length || 0;
+      const activeProjectsFromMyTasks = new Set(
+        (tasks || [])
+          .filter((t) => t.assigned_to === user!.id && t.project_id)
+          .map((t) => t.project_id)
+      ).size;
+      const activeProjects = Math.max(activeProjectsByStatus, activeProjectsFromMyTasks);
+      const totalTasks = tasks?.length || 0;
+      const pendingTasks = tasks?.filter(t => t.status === 'todo' || t.status === 'in_progress').length || 0;
+      const myTasks = tasks?.filter(t => t.assigned_to === user!.id && (t.status === 'todo' || t.status === 'in_progress')).length || 0;
 
-        const totalProjects = projects?.length || 0;
-        const activeProjectsByStatus = projects?.filter((project) => isActiveProjectStatus(project.status)).length || 0;
-        const activeProjectsFromMyTasks = new Set(
-          (tasks || [])
-            .filter((task) => task.assigned_to === user.id && task.project_id)
-            .map((task) => task.project_id)
-        ).size;
-        const activeProjects = Math.max(activeProjectsByStatus, activeProjectsFromMyTasks);
-        const totalTasks = tasks?.length || 0;
-        const pendingTasks = tasks?.filter(t => t.status === 'todo' || t.status === 'in_progress').length || 0;
-        const myTasks = tasks?.filter(t => t.assigned_to === user.id && (t.status === 'todo' || t.status === 'in_progress')).length || 0;
+      // Tasks by project for chart
+      const projectMap = new Map<string, { name: string; total: number; done: number }>();
+      projects?.forEach(p => projectMap.set(p.id, { name: p.name.length > 15 ? p.name.slice(0, 15) + '…' : p.name, total: 0, done: 0 }));
+      tasks?.forEach(t => {
+        const proj = projectMap.get(t.project_id);
+        if (proj) {
+          proj.total++;
+          if (t.status === 'done') proj.done++;
+        }
+      });
+      const tasksByProject = Array.from(projectMap.values()).filter(p => p.total > 0);
 
-        setStats({
-          totalProjects,
-          activeProjects,
-          totalTasks,
-          pendingTasks,
-          myTasks,
-        });
-      } catch (error) {
-        console.error('Error fetching dashboard stats:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
+      // Tasks by status for pie chart
+      const statusCounts: Record<string, number> = {};
+      tasks?.forEach(t => { statusCounts[t.status] = (statusCounts[t.status] || 0) + 1; });
+      const tasksByStatus = [
+        { name: 'A Fazer', value: (statusCounts['todo'] || 0) + (statusCounts['backlog'] || 0), color: 'hsl(var(--primary))' },
+        { name: 'Em Andamento', value: statusCounts['in_progress'] || 0, color: 'hsl(var(--warning))' },
+        { name: 'Bloqueado', value: statusCounts['blocked'] || 0, color: 'hsl(var(--destructive))' },
+        { name: 'Revisão', value: statusCounts['review'] || 0, color: 'hsl(38, 70%, 60%)' },
+        { name: 'Concluído', value: statusCounts['done'] || 0, color: 'hsl(var(--success))' },
+      ];
 
-    fetchStats();
-  }, [user]);
+      return {
+        totalProjects,
+        activeProjects,
+        totalTasks,
+        pendingTasks,
+        myTasks,
+        tasksByProject,
+        tasksByStatus,
+      };
+    },
+    enabled: !!user,
+  });
 
   const userName = user?.user_metadata?.full_name?.split(' ')[0] || 'Usuário';
 
@@ -107,14 +114,10 @@ export default function Dashboard() {
             <FolderKanban className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            {loading ? (
-              <Skeleton className="h-8 w-20" />
-            ) : (
+            {loading ? <Skeleton className="h-8 w-20" /> : (
               <>
                 <div className="text-2xl font-bold">{stats?.activeProjects}</div>
-                <p className="text-xs text-muted-foreground">
-                  de {stats?.totalProjects} projetos
-                </p>
+                <p className="text-xs text-muted-foreground">de {stats?.totalProjects} projetos</p>
               </>
             )}
           </CardContent>
@@ -126,9 +129,7 @@ export default function Dashboard() {
             <CheckSquare className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            {loading ? (
-              <Skeleton className="h-8 w-20" />
-            ) : (
+            {loading ? <Skeleton className="h-8 w-20" /> : (
               <>
                 <div className="text-2xl font-bold">{stats?.myTasks}</div>
                 <p className="text-xs text-muted-foreground">pendentes para você</p>
@@ -143,14 +144,10 @@ export default function Dashboard() {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            {loading ? (
-              <Skeleton className="h-8 w-20" />
-            ) : (
+            {loading ? <Skeleton className="h-8 w-20" /> : (
               <>
                 <div className="text-2xl font-bold">{stats?.pendingTasks}</div>
-                <p className="text-xs text-muted-foreground">
-                  de {stats?.totalTasks} tarefas
-                </p>
+                <p className="text-xs text-muted-foreground">de {stats?.totalTasks} tarefas</p>
               </>
             )}
           </CardContent>
@@ -162,9 +159,7 @@ export default function Dashboard() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            {loading ? (
-              <Skeleton className="h-8 w-20" />
-            ) : (
+            {loading ? <Skeleton className="h-8 w-20" /> : (
               <>
                 <div className="text-2xl font-bold">
                   {stats?.totalTasks
@@ -178,67 +173,72 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Quick Actions */}
+      {/* Charts */}
+      {stats && (
+        <DashboardCharts
+          tasksByProject={stats.tasksByProject}
+          tasksByStatus={stats.tasksByStatus}
+        />
+      )}
+
+      {/* Activity + Quick Actions */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="hover:border-primary/50 transition-colors">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FolderKanban className="h-5 w-5 text-primary" />
-              Projetos
-            </CardTitle>
-            <CardDescription>
-              Gerencie seus projetos de P&D
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button variant="outline" className="w-full" asChild>
-              <Link to="/projects">
-                Ver Projetos
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="lg:col-span-2">
+          <RecentActivity />
+        </div>
 
-        <Card className="hover:border-primary/50 transition-colors">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CheckSquare className="h-5 w-5 text-primary" />
-              Tarefas
-            </CardTitle>
-            <CardDescription>
-              Acompanhe suas atividades
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button variant="outline" className="w-full" asChild>
-              <Link to="/tasks">
-                Ver Tarefas
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="space-y-4">
+          <Card className="hover:border-primary/50 transition-colors">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-sm">
+                <FolderKanban className="h-4 w-4 text-primary" />
+                Projetos
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <Button variant="outline" className="w-full" size="sm" asChild>
+                <Link to="/projects">
+                  Ver Projetos
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
 
-        <Card className="hover:border-primary/50 transition-colors">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-primary" />
-              Relatórios
-            </CardTitle>
-            <CardDescription>
-              Documente seus resultados
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button variant="outline" className="w-full" asChild>
-              <Link to="/reports">
-                Ver Relatórios
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
+          <Card className="hover:border-primary/50 transition-colors">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-sm">
+                <CheckSquare className="h-4 w-4 text-primary" />
+                Tarefas
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <Button variant="outline" className="w-full" size="sm" asChild>
+                <Link to="/tasks">
+                  Ver Tarefas
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:border-primary/50 transition-colors">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-sm">
+                <FileText className="h-4 w-4 text-primary" />
+                Relatórios
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <Button variant="outline" className="w-full" size="sm" asChild>
+                <Link to="/reports">
+                  Ver Relatórios
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Welcome Card for new users */}
