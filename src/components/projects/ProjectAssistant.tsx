@@ -40,13 +40,6 @@ export function ProjectAssistant({ projectId, projectName }: ProjectAssistantPro
     'Quais lacunas de conhecimento foram identificadas?',
   ];
 
-  // Collect all sources from all messages
-  const allSources = messages
-    .filter(m => m.role === 'assistant' && m.sources)
-    .flatMap(m => m.sources || [])
-    .filter((source, index, self) => 
-      index === self.findIndex(s => s.citation === source.citation)
-    );
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
