@@ -6,6 +6,7 @@ import { AppSidebar } from './AppSidebar';
 import { Breadcrumbs } from './Breadcrumbs';
 import { SmartSearchDialog } from '@/components/search/SmartSearchDialog';
 import { SearchButton } from '@/components/search/SearchButton';
+import { NotificationBell } from './NotificationBell';
 import { useAuth } from '@/hooks/useAuth';
 import { Loader2 } from 'lucide-react';
 
