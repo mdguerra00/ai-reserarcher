@@ -22,6 +22,10 @@ import NotFound from "./pages/NotFound";
 import Assistant from "./pages/Assistant";
 import Admin from "./pages/Admin";
 import ResetPassword from "./pages/ResetPassword";
+import ProductsCatalog from "./pages/ProductsCatalog";
+import ProductDetailPage from "./pages/ProductDetail";
+import Researches from "./pages/Researches";
+import ResearchDetail from "./pages/ResearchDetail";
 
 const queryClient = new QueryClient();
 
