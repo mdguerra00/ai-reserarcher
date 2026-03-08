@@ -186,7 +186,7 @@ export default function Reports() {
               </div>
             ) : (
               <div className="space-y-3">
-                {filteredReports.map((report) => {
+                {paginatedReports.map((report) => {
                   const StatusIcon = statusConfig[report.status]?.icon || FileText;
                   return (
                     <div
@@ -222,6 +222,33 @@ export default function Reports() {
                     </div>
                   );
                 })}
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between pt-4">
+                    <p className="text-sm text-muted-foreground">
+                      {filteredReports.length} relatório{filteredReports.length !== 1 ? 's' : ''} • Página {currentPage} de {totalPages}
+                    </p>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                      >
+                        Anterior
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages}
+                      >
+                        Próxima
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
