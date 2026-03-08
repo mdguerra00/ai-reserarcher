@@ -314,17 +314,6 @@ export default function Assistant() {
         </div>
       </div>
 
-      {/* Sources Panel */}
-      {showSources && (
-        <div className="w-72 border-l hidden lg:flex flex-col shrink-0">
-          <SourcesPanel
-            sources={allSources}
-            highlightedCitation={highlightedCitation}
-            onClose={() => setShowSources(false)}
-          />
-        </div>
-      )}
-
       {/* Analyze File Picker */}
       <AnalyzeFilePicker
         open={showFilePicker}
