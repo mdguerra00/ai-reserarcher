@@ -81,11 +81,6 @@ export default function Assistant() {
     sendMessage(question);
   };
 
-  const handleSourceClick = (citation: string) => {
-    setHighlightedCitation(citation);
-    setShowSources(true);
-    setTimeout(() => setHighlightedCitation(undefined), 2000);
-  };
 
   const getUserQuestionBefore = (index: number): string | undefined => {
     for (let i = index - 1; i >= 0; i--) {
