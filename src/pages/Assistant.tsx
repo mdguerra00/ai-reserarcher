@@ -58,32 +58,16 @@ export default function Assistant() {
   } = useAssistantChat();
 
   const [input, setInput] = useState('');
-  const [showSources, setShowSources] = useState(false);
   const [showConversations, setShowConversations] = useState(true);
   const [showFilePicker, setShowFilePicker] = useState(false);
-  const [highlightedCitation, setHighlightedCitation] = useState<string>();
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  const allSources = messages
-    .filter(m => m.role === 'assistant' && m.sources)
-    .flatMap(m => m.sources || [])
-    .filter((source, index, self) =>
-      index === self.findIndex(s => s.citation === source.citation)
-    );
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
-
-  // Auto-show sources when they appear
-  useEffect(() => {
-    if (allSources.length > 0 && !showSources) {
-      setShowSources(true);
-    }
-  }, [allSources.length]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
