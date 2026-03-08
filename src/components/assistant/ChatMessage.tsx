@@ -150,46 +150,9 @@ export function ChatMessage({ message, userQuestion }: ChatMessageProps) {
               remarkPlugins={[remarkGfm]}
               components={{
                 a: ({ href, children }) => {
-                  const citationMatch = String(children).match(/^\[(\d+)\]$/);
-                  if (citationMatch && onSourceClick) {
-                    return (
-                      <Badge
-                        variant="secondary"
-                        className="cursor-pointer hover:bg-primary hover:text-primary-foreground mx-0.5 text-xs"
-                        onClick={() => onSourceClick(citationMatch[1])}
-                      >
-                        {children}
-                      </Badge>
-                    );
-                  }
-                  return <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>;
+                  return <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary underline">{children}</a>;
                 },
-                p: ({ children }) => {
-                  if (typeof children === 'string') {
-                    const parts = children.split(/(\[\d+\])/g);
-                    return (
-                      <p>
-                        {parts.map((part, i) => {
-                          const match = part.match(/^\[(\d+)\]$/);
-                          if (match && onSourceClick) {
-                            return (
-                              <Badge
-                                key={i}
-                                variant="secondary"
-                                className="cursor-pointer hover:bg-primary hover:text-primary-foreground mx-0.5 text-xs inline-flex"
-                                onClick={() => onSourceClick(match[1])}
-                              >
-                                {part}
-                              </Badge>
-                            );
-                          }
-                          return part;
-                        })}
-                      </p>
-                    );
-                  }
-                  return <p>{children}</p>;
-                },
+                p: ({ children }) => <p>{children}</p>,
                 ul: ({ children }) => <ul className="list-disc pl-4 space-y-1">{children}</ul>,
                 ol: ({ children }) => <ol className="list-decimal pl-4 space-y-1">{children}</ol>,
                 li: ({ children }) => <li className="text-foreground">{children}</li>,
