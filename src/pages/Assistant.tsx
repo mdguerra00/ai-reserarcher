@@ -26,6 +26,17 @@ import { ConversationList } from '@/components/assistant/ConversationList';
 import { AnalyzeFilePicker } from '@/components/assistant/AnalyzeFilePicker';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 const suggestedQuestions = [
   'Qual a resistência média dos materiais testados?',
