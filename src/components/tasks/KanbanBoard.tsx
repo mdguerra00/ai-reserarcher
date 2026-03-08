@@ -200,6 +200,39 @@ export function KanbanBoard({
 
       if (error) throw error;
 
+      // Auto-generate knowledge when moving to done column
+      if (targetColumn.is_done_column && task.column_id !== targetColumnId) {
+        try {
+          // Fetch full task data for knowledge generation
+          const { data: fullTask } = await supabase
+            .from('tasks')
+            .select('*')
+            .eq('id', taskId)
+            .single();
+
+          if (fullTask) {
+            const { createKnowledgeFromTask } = await import('@/hooks/useTaskKnowledge');
+            await createKnowledgeFromTask({
+              id: fullTask.id,
+              title: fullTask.title,
+              hypothesis: fullTask.hypothesis,
+              variables_changed: fullTask.variables_changed || [],
+              target_metrics: fullTask.target_metrics || [],
+              success_criteria: fullTask.success_criteria,
+              procedure: fullTask.procedure,
+              checklist: Array.isArray(fullTask.checklist) ? fullTask.checklist as { text: string; done: boolean }[] : [],
+              partial_results: fullTask.partial_results,
+              conclusion: fullTask.conclusion,
+              decision: fullTask.decision,
+              external_links: fullTask.external_links || [],
+              tags: fullTask.tags || [],
+            }, user.id, fullTask.project_id);
+          }
+        } catch (knowledgeErr) {
+          console.error('Erro ao gerar conhecimento:', knowledgeErr);
+        }
+      }
+
       // Log activity
       if (task.column_id !== targetColumnId) {
         const oldCol = sortedColumns.find(c => c.id === task.column_id);
