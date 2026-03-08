@@ -102,11 +102,21 @@ export default function Reports() {
     navigate(`/projects/${report.project_id}?tab=reports&report=${report.id}`);
   };
 
-  const filteredReports = reports?.filter(report =>
-    report.title.toLowerCase().includes(search.toLowerCase()) ||
-    report.summary?.toLowerCase().includes(search.toLowerCase()) ||
-    report.projects?.name.toLowerCase().includes(search.toLowerCase())
-  ) || [];
+  const ITEMS_PER_PAGE = 15;
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const filteredReports = useMemo(() => {
+    return reports?.filter(report =>
+      report.title.toLowerCase().includes(search.toLowerCase()) ||
+      report.summary?.toLowerCase().includes(search.toLowerCase()) ||
+      report.projects?.name.toLowerCase().includes(search.toLowerCase())
+    ) || [];
+  }, [reports, search]);
+
+  const totalPages = Math.ceil(filteredReports.length / ITEMS_PER_PAGE);
+  const paginatedReports = filteredReports.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+  useEffect(() => { setCurrentPage(1); }, [search]);
 
   if (reportsLoading) {
     return (
