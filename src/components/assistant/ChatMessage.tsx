@@ -33,7 +33,8 @@ function getSourceRoute(source: { type?: string; id?: string }): string | null {
   return null;
 }
 
-export function ChatMessage({ message, onSourceClick, userQuestion }: ChatMessageProps) {
+export function ChatMessage({ message, userQuestion }: ChatMessageProps) {
+  const navigate = useNavigate();
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [savingInsights, setSavingInsights] = useState(false);
   const [insightsSaved, setInsightsSaved] = useState<number | null>(null);
