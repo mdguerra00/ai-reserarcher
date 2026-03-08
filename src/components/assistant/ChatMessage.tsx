@@ -201,16 +201,23 @@ export function ChatMessage({ message, userQuestion }: ChatMessageProps) {
           {message.sources && message.sources.length > 0 && (
             <div className="flex flex-wrap gap-1 pt-2">
               <span className="text-xs text-muted-foreground">Fontes:</span>
-              {message.sources.map((source) => (
-                <Badge
-                  key={source.citation}
-                  variant="outline"
-                  className="text-xs cursor-pointer hover:bg-accent"
-                  onClick={() => onSourceClick?.(source.citation)}
-                >
-                  [{source.citation}] {source.title}
-                </Badge>
-              ))}
+              {message.sources.map((source) => {
+                const route = getSourceRoute(source);
+                return (
+                  <Badge
+                    key={source.citation}
+                    variant="outline"
+                    className={cn(
+                      "text-xs gap-1",
+                      route ? "cursor-pointer hover:bg-accent" : ""
+                    )}
+                    onClick={() => route && navigate(route)}
+                  >
+                    [{source.citation}] {source.title}
+                    {route && <ExternalLink className="h-2.5 w-2.5" />}
+                  </Badge>
+                );
+              })}
             </div>
           )}
 
