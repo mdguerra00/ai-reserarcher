@@ -22,6 +22,10 @@ import NotFound from "./pages/NotFound";
 import Assistant from "./pages/Assistant";
 import Admin from "./pages/Admin";
 import ResetPassword from "./pages/ResetPassword";
+import ProductsCatalog from "./pages/ProductsCatalog";
+import ProductDetailPage from "./pages/ProductDetail";
+import Researches from "./pages/Researches";
+import ResearchDetail from "./pages/ResearchDetail";
 
 const queryClient = new QueryClient();
 
@@ -123,6 +127,38 @@ const App = () => (
               element={
                 <AppLayout>
                   <Admin />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/products"
+              element={
+                <AppLayout>
+                  <ProductsCatalog />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/products/:id"
+              element={
+                <AppLayout>
+                  <ProductDetailPage />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/researches"
+              element={
+                <AppLayout>
+                  <Researches />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/researches/:id"
+              element={
+                <AppLayout>
+                  <ResearchDetail />
                 </AppLayout>
               }
             />

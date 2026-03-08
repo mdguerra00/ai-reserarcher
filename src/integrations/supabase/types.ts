@@ -1375,6 +1375,263 @@ export type Database = {
           },
         ]
       }
+      product_changes: {
+        Row: {
+          affected_documents: string[] | null
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          created_by: string
+          deleted_at: string | null
+          description: string
+          id: string
+          implementation_date: string | null
+          needs_validation: boolean | null
+          needs_verification: boolean | null
+          origin: Database["public"]["Enums"]["change_origin"] | null
+          process_impact: string | null
+          product_id: string
+          project_id: string | null
+          reason: string | null
+          regulatory_impact: string | null
+          risk_impact: string | null
+          status: Database["public"]["Enums"]["product_change_status"]
+          technical_impact: string | null
+          updated_at: string
+          version_from: string | null
+          version_to: string | null
+        }
+        Insert: {
+          affected_documents?: string[] | null
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by: string
+          deleted_at?: string | null
+          description: string
+          id?: string
+          implementation_date?: string | null
+          needs_validation?: boolean | null
+          needs_verification?: boolean | null
+          origin?: Database["public"]["Enums"]["change_origin"] | null
+          process_impact?: string | null
+          product_id: string
+          project_id?: string | null
+          reason?: string | null
+          regulatory_impact?: string | null
+          risk_impact?: string | null
+          status?: Database["public"]["Enums"]["product_change_status"]
+          technical_impact?: string | null
+          updated_at?: string
+          version_from?: string | null
+          version_to?: string | null
+        }
+        Update: {
+          affected_documents?: string[] | null
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string
+          deleted_at?: string | null
+          description?: string
+          id?: string
+          implementation_date?: string | null
+          needs_validation?: boolean | null
+          needs_verification?: boolean | null
+          origin?: Database["public"]["Enums"]["change_origin"] | null
+          process_impact?: string | null
+          product_id?: string
+          project_id?: string | null
+          reason?: string | null
+          regulatory_impact?: string | null
+          risk_impact?: string | null
+          status?: Database["public"]["Enums"]["product_change_status"]
+          technical_impact?: string | null
+          updated_at?: string
+          version_from?: string | null
+          version_to?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_changes_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_changes_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_developments: {
+        Row: {
+          code: string | null
+          created_at: string
+          created_by: string
+          deleted_at: string | null
+          design_inputs: string | null
+          design_outputs: string | null
+          id: string
+          intended_use: string | null
+          product_id: string
+          project_id: string | null
+          regulatory_status: string | null
+          risk_summary: string | null
+          status: Database["public"]["Enums"]["product_dev_status"]
+          transfer_status: string | null
+          updated_at: string
+          validation_status: string | null
+          verification_status: string | null
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string
+          created_by: string
+          deleted_at?: string | null
+          design_inputs?: string | null
+          design_outputs?: string | null
+          id?: string
+          intended_use?: string | null
+          product_id: string
+          project_id?: string | null
+          regulatory_status?: string | null
+          risk_summary?: string | null
+          status?: Database["public"]["Enums"]["product_dev_status"]
+          transfer_status?: string | null
+          updated_at?: string
+          validation_status?: string | null
+          verification_status?: string | null
+        }
+        Update: {
+          code?: string | null
+          created_at?: string
+          created_by?: string
+          deleted_at?: string | null
+          design_inputs?: string | null
+          design_outputs?: string | null
+          id?: string
+          intended_use?: string | null
+          product_id?: string
+          project_id?: string | null
+          regulatory_status?: string | null
+          risk_summary?: string | null
+          status?: Database["public"]["Enums"]["product_dev_status"]
+          transfer_status?: string | null
+          updated_at?: string
+          validation_status?: string | null
+          verification_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_developments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_developments_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_timeline_events: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          event_date: string
+          event_type: Database["public"]["Enums"]["timeline_event_type"]
+          id: string
+          product_id: string
+          source_id: string | null
+          source_type: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          event_date?: string
+          event_type?: Database["public"]["Enums"]["timeline_event_type"]
+          id?: string
+          product_id: string
+          source_id?: string | null
+          source_type?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          event_date?: string
+          event_type?: Database["public"]["Enums"]["timeline_event_type"]
+          id?: string
+          product_id?: string
+          source_id?: string | null
+          source_type?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_timeline_events_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          created_at: string
+          created_by: string
+          current_version: string | null
+          deleted_at: string | null
+          family: string | null
+          id: string
+          intended_use: string | null
+          lifecycle_status: Database["public"]["Enums"]["product_lifecycle_status"]
+          name: string
+          regulatory_status: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          current_version?: string | null
+          deleted_at?: string | null
+          family?: string | null
+          id?: string
+          intended_use?: string | null
+          lifecycle_status?: Database["public"]["Enums"]["product_lifecycle_status"]
+          name: string
+          regulatory_status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          current_version?: string | null
+          deleted_at?: string | null
+          family?: string | null
+          id?: string
+          intended_use?: string | null
+          lifecycle_status?: Database["public"]["Enums"]["product_lifecycle_status"]
+          name?: string
+          regulatory_status?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1923,6 +2180,134 @@ export type Database = {
           },
         ]
       }
+      research_links: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          link_type: string
+          research_id: string
+          target_id: string
+          target_type: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          link_type?: string
+          research_id: string
+          target_id: string
+          target_type: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          link_type?: string
+          research_id?: string
+          target_id?: string
+          target_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "research_links_research_id_fkey"
+            columns: ["research_id"]
+            isOneToOne: false
+            referencedRelation: "researches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      researches: {
+        Row: {
+          conclusions: string | null
+          created_at: string
+          created_by: string
+          deleted_at: string | null
+          future_application: string | null
+          hypothesis: string | null
+          id: string
+          keywords: string[] | null
+          knowledge_destination:
+            | Database["public"]["Enums"]["knowledge_destination"]
+            | null
+          learnings: string | null
+          linked_product_id: string | null
+          method: string | null
+          motivation: string | null
+          objective: string | null
+          project_id: string | null
+          responsible_id: string | null
+          results: string | null
+          status: Database["public"]["Enums"]["research_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          conclusions?: string | null
+          created_at?: string
+          created_by: string
+          deleted_at?: string | null
+          future_application?: string | null
+          hypothesis?: string | null
+          id?: string
+          keywords?: string[] | null
+          knowledge_destination?:
+            | Database["public"]["Enums"]["knowledge_destination"]
+            | null
+          learnings?: string | null
+          linked_product_id?: string | null
+          method?: string | null
+          motivation?: string | null
+          objective?: string | null
+          project_id?: string | null
+          responsible_id?: string | null
+          results?: string | null
+          status?: Database["public"]["Enums"]["research_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          conclusions?: string | null
+          created_at?: string
+          created_by?: string
+          deleted_at?: string | null
+          future_application?: string | null
+          hypothesis?: string | null
+          id?: string
+          keywords?: string[] | null
+          knowledge_destination?:
+            | Database["public"]["Enums"]["knowledge_destination"]
+            | null
+          learnings?: string | null
+          linked_product_id?: string | null
+          method?: string | null
+          motivation?: string | null
+          objective?: string | null
+          project_id?: string | null
+          responsible_id?: string | null
+          results?: string | null
+          status?: Database["public"]["Enums"]["research_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "researches_linked_product_id_fkey"
+            columns: ["linked_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "researches_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       search_chunks: {
         Row: {
           chunk_hash: string
@@ -2380,6 +2765,14 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      change_origin:
+        | "research"
+        | "capa"
+        | "complaint"
+        | "supplier"
+        | "process"
+        | "regulatory"
+        | "other"
       extraction_status: "pending" | "processing" | "completed" | "failed"
       knowledge_category:
         | "compound"
@@ -2396,6 +2789,33 @@ export type Database = {
         | "pattern"
         | "contradiction"
         | "gap"
+      knowledge_destination:
+        | "archived"
+        | "continue_research"
+        | "escalate_product_dev"
+        | "escalate_product_change"
+        | "escalate_capa"
+        | "escalate_process_change"
+      product_change_status:
+        | "draft"
+        | "under_review"
+        | "approved"
+        | "implemented"
+        | "rejected"
+      product_dev_status:
+        | "planning"
+        | "design_input"
+        | "design_output"
+        | "verification"
+        | "validation"
+        | "transfer"
+        | "released"
+        | "cancelled"
+      product_lifecycle_status:
+        | "development"
+        | "active"
+        | "discontinued"
+        | "obsolete"
       project_role: "owner" | "manager" | "researcher" | "viewer"
       project_status:
         | "planning"
@@ -2409,6 +2829,7 @@ export type Database = {
         | "under_review"
         | "approved"
         | "archived"
+      research_status: "draft" | "in_progress" | "concluded" | "promoted"
       task_priority: "low" | "medium" | "high" | "urgent"
       task_status:
         | "todo"
@@ -2417,6 +2838,15 @@ export type Database = {
         | "done"
         | "backlog"
         | "blocked"
+      timeline_event_type:
+        | "creation"
+        | "research_linked"
+        | "development_milestone"
+        | "change_approved"
+        | "change_implemented"
+        | "document_updated"
+        | "risk_reviewed"
+        | "version_released"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2545,6 +2975,15 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      change_origin: [
+        "research",
+        "capa",
+        "complaint",
+        "supplier",
+        "process",
+        "regulatory",
+        "other",
+      ],
       extraction_status: ["pending", "processing", "completed", "failed"],
       knowledge_category: [
         "compound",
@@ -2562,6 +3001,37 @@ export const Constants = {
         "contradiction",
         "gap",
       ],
+      knowledge_destination: [
+        "archived",
+        "continue_research",
+        "escalate_product_dev",
+        "escalate_product_change",
+        "escalate_capa",
+        "escalate_process_change",
+      ],
+      product_change_status: [
+        "draft",
+        "under_review",
+        "approved",
+        "implemented",
+        "rejected",
+      ],
+      product_dev_status: [
+        "planning",
+        "design_input",
+        "design_output",
+        "verification",
+        "validation",
+        "transfer",
+        "released",
+        "cancelled",
+      ],
+      product_lifecycle_status: [
+        "development",
+        "active",
+        "discontinued",
+        "obsolete",
+      ],
       project_role: ["owner", "manager", "researcher", "viewer"],
       project_status: [
         "planning",
@@ -2577,6 +3047,7 @@ export const Constants = {
         "approved",
         "archived",
       ],
+      research_status: ["draft", "in_progress", "concluded", "promoted"],
       task_priority: ["low", "medium", "high", "urgent"],
       task_status: [
         "todo",
@@ -2585,6 +3056,16 @@ export const Constants = {
         "done",
         "backlog",
         "blocked",
+      ],
+      timeline_event_type: [
+        "creation",
+        "research_linked",
+        "development_milestone",
+        "change_approved",
+        "change_implemented",
+        "document_updated",
+        "risk_reviewed",
+        "version_released",
       ],
     },
   },
