@@ -38,8 +38,9 @@ export function AppLayout({ children }: AppLayoutProps) {
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 h-4" />
           <Breadcrumbs />
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-1">
             <SearchButton onClick={() => setSearchOpen(true)} />
+            <NotificationBell />
           </div>
         </header>
         <main className="flex-1 overflow-auto p-4 md:p-6">
