@@ -27,10 +27,9 @@ interface ProjectAssistantProps {
 export function ProjectAssistant({ projectId, projectName }: ProjectAssistantProps) {
   const { messages, isLoading, sendMessage, clearMessages, analyzeDocument } = useAssistantChat({ projectId });
   const [input, setInput] = useState('');
-  const [showSources, setShowSources] = useState(true);
   const [showFilePicker, setShowFilePicker] = useState(false);
-  const [highlightedCitation, setHighlightedCitation] = useState<string>();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Dynamic suggested questions based on project context
