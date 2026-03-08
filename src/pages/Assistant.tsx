@@ -11,8 +11,6 @@ import {
   Bot,
   Sparkles,
   MessageSquare,
-  PanelRightOpen,
-  PanelRightClose,
   PanelLeftOpen,
   PanelLeftClose,
   FileSearch,
@@ -21,7 +19,6 @@ import {
 } from 'lucide-react';
 import { useAssistantChat } from '@/hooks/useAssistantChat';
 import { ChatMessage } from '@/components/assistant/ChatMessage';
-import { SourcesPanel } from '@/components/assistant/SourcesPanel';
 import { ConversationList } from '@/components/assistant/ConversationList';
 import { AnalyzeFilePicker } from '@/components/assistant/AnalyzeFilePicker';
 import { cn } from '@/lib/utils';
