@@ -11,14 +11,11 @@ import {
   Sparkles,
   MessageSquare,
   Trash2,
-  PanelRightOpen,
-  PanelRightClose,
   FolderOpen,
   FileSearch,
 } from 'lucide-react';
 import { useAssistantChat } from '@/hooks/useAssistantChat';
 import { ChatMessage } from '@/components/assistant/ChatMessage';
-import { SourcesPanel } from '@/components/assistant/SourcesPanel';
 import { AnalyzeFilePicker } from '@/components/assistant/AnalyzeFilePicker';
 import { cn } from '@/lib/utils';
 
