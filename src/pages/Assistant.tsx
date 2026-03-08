@@ -4,15 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import {
   Send,
   Loader2,
   Bot,
   Sparkles,
   MessageSquare,
-  PanelRightOpen,
-  PanelRightClose,
   PanelLeftOpen,
   PanelLeftClose,
   FileSearch,
@@ -21,7 +18,6 @@ import {
 } from 'lucide-react';
 import { useAssistantChat } from '@/hooks/useAssistantChat';
 import { ChatMessage } from '@/components/assistant/ChatMessage';
-import { SourcesPanel } from '@/components/assistant/SourcesPanel';
 import { ConversationList } from '@/components/assistant/ConversationList';
 import { AnalyzeFilePicker } from '@/components/assistant/AnalyzeFilePicker';
 import { cn } from '@/lib/utils';
@@ -61,32 +57,16 @@ export default function Assistant() {
   } = useAssistantChat();
 
   const [input, setInput] = useState('');
-  const [showSources, setShowSources] = useState(false);
   const [showConversations, setShowConversations] = useState(true);
   const [showFilePicker, setShowFilePicker] = useState(false);
-  const [highlightedCitation, setHighlightedCitation] = useState<string>();
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  const allSources = messages
-    .filter(m => m.role === 'assistant' && m.sources)
-    .flatMap(m => m.sources || [])
-    .filter((source, index, self) =>
-      index === self.findIndex(s => s.citation === source.citation)
-    );
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
-
-  // Auto-show sources when they appear
-  useEffect(() => {
-    if (allSources.length > 0 && !showSources) {
-      setShowSources(true);
-    }
-  }, [allSources.length]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,11 +80,6 @@ export default function Assistant() {
     sendMessage(question);
   };
 
-  const handleSourceClick = (citation: string) => {
-    setHighlightedCitation(citation);
-    setShowSources(true);
-    setTimeout(() => setHighlightedCitation(undefined), 2000);
-  };
 
   const getUserQuestionBefore = (index: number): string | undefined => {
     for (let i = index - 1; i >= 0; i--) {
@@ -240,28 +215,6 @@ export default function Assistant() {
               </AlertDialog>
             )}
 
-            <Separator orientation="vertical" className="h-4 mx-1" />
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={showSources ? 'secondary' : 'ghost'}
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => setShowSources(!showSources)}
-                >
-                  {showSources ? (
-                    <PanelRightClose className="h-3.5 w-3.5" />
-                  ) : (
-                    <PanelRightOpen className="h-3.5 w-3.5" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                {showSources ? 'Ocultar fontes' : 'Mostrar fontes'}
-                {allSources.length > 0 && ` (${allSources.length})`}
-              </TooltipContent>
-            </Tooltip>
           </div>
         </div>
 
@@ -304,7 +257,6 @@ export default function Assistant() {
                   <ChatMessage
                     key={message.id}
                     message={message}
-                    onSourceClick={handleSourceClick}
                     userQuestion={
                       message.role === 'assistant'
                         ? getUserQuestionBefore(index)
@@ -355,17 +307,6 @@ export default function Assistant() {
           </form>
         </div>
       </div>
-
-      {/* Sources Panel */}
-      {showSources && (
-        <div className="w-72 border-l hidden lg:flex flex-col shrink-0">
-          <SourcesPanel
-            sources={allSources}
-            highlightedCitation={highlightedCitation}
-            onClose={() => setShowSources(false)}
-          />
-        </div>
-      )}
 
       {/* Analyze File Picker */}
       <AnalyzeFilePicker

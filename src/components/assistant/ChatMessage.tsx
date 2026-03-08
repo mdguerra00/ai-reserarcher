@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -9,7 +10,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Bot, User, AlertCircle, Lightbulb, DatabaseZap, Loader2, Check } from 'lucide-react';
+import { Bot, User, AlertCircle, Lightbulb, DatabaseZap, Loader2, Check, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ChatMessage as ChatMessageType } from '@/hooks/useAssistantChat';
 import { SaveInsightModal } from './SaveInsightModal';
@@ -18,11 +19,22 @@ import { toast } from '@/hooks/use-toast';
 
 interface ChatMessageProps {
   message: ChatMessageType;
-  onSourceClick?: (citation: string) => void;
-  userQuestion?: string; // The preceding user message for evidence
+  onSourceClick?: (citation: string) => void; // kept for backward compat but unused
+  userQuestion?: string;
 }
 
-export function ChatMessage({ message, onSourceClick, userQuestion }: ChatMessageProps) {
+function getSourceRoute(source: { type?: string; id?: string }): string | null {
+  const t = source.type?.toLowerCase() || '';
+  if (t.includes('task')) return '/tasks';
+  if (t.includes('report')) return '/reports';
+  if (t.includes('knowledge') || t.includes('insight')) return '/knowledge';
+  if (t.includes('file') || t.includes('excel')) return '/files';
+  if (t.includes('experiment') || t.includes('measurement')) return '/knowledge';
+  return null;
+}
+
+export function ChatMessage({ message, userQuestion }: ChatMessageProps) {
+  const navigate = useNavigate();
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [savingInsights, setSavingInsights] = useState(false);
   const [insightsSaved, setInsightsSaved] = useState<number | null>(null);
@@ -138,46 +150,9 @@ export function ChatMessage({ message, onSourceClick, userQuestion }: ChatMessag
               remarkPlugins={[remarkGfm]}
               components={{
                 a: ({ href, children }) => {
-                  const citationMatch = String(children).match(/^\[(\d+)\]$/);
-                  if (citationMatch && onSourceClick) {
-                    return (
-                      <Badge
-                        variant="secondary"
-                        className="cursor-pointer hover:bg-primary hover:text-primary-foreground mx-0.5 text-xs"
-                        onClick={() => onSourceClick(citationMatch[1])}
-                      >
-                        {children}
-                      </Badge>
-                    );
-                  }
-                  return <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>;
+                  return <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary underline">{children}</a>;
                 },
-                p: ({ children }) => {
-                  if (typeof children === 'string') {
-                    const parts = children.split(/(\[\d+\])/g);
-                    return (
-                      <p>
-                        {parts.map((part, i) => {
-                          const match = part.match(/^\[(\d+)\]$/);
-                          if (match && onSourceClick) {
-                            return (
-                              <Badge
-                                key={i}
-                                variant="secondary"
-                                className="cursor-pointer hover:bg-primary hover:text-primary-foreground mx-0.5 text-xs inline-flex"
-                                onClick={() => onSourceClick(match[1])}
-                              >
-                                {part}
-                              </Badge>
-                            );
-                          }
-                          return part;
-                        })}
-                      </p>
-                    );
-                  }
-                  return <p>{children}</p>;
-                },
+                p: ({ children }) => <p>{children}</p>,
                 ul: ({ children }) => <ul className="list-disc pl-4 space-y-1">{children}</ul>,
                 ol: ({ children }) => <ol className="list-decimal pl-4 space-y-1">{children}</ol>,
                 li: ({ children }) => <li className="text-foreground">{children}</li>,
@@ -226,16 +201,23 @@ export function ChatMessage({ message, onSourceClick, userQuestion }: ChatMessag
           {message.sources && message.sources.length > 0 && (
             <div className="flex flex-wrap gap-1 pt-2">
               <span className="text-xs text-muted-foreground">Fontes:</span>
-              {message.sources.map((source) => (
-                <Badge
-                  key={source.citation}
-                  variant="outline"
-                  className="text-xs cursor-pointer hover:bg-accent"
-                  onClick={() => onSourceClick?.(source.citation)}
-                >
-                  [{source.citation}] {source.title}
-                </Badge>
-              ))}
+              {message.sources.map((source) => {
+                const route = getSourceRoute(source);
+                return (
+                  <Badge
+                    key={source.citation}
+                    variant="outline"
+                    className={cn(
+                      "text-xs gap-1",
+                      route ? "cursor-pointer hover:bg-accent" : ""
+                    )}
+                    onClick={() => route && navigate(route)}
+                  >
+                    [{source.citation}] {source.title}
+                    {route && <ExternalLink className="h-2.5 w-2.5" />}
+                  </Badge>
+                );
+              })}
             </div>
           )}
 

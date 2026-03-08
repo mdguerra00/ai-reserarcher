@@ -11,14 +11,11 @@ import {
   Sparkles,
   MessageSquare,
   Trash2,
-  PanelRightOpen,
-  PanelRightClose,
   FolderOpen,
   FileSearch,
 } from 'lucide-react';
 import { useAssistantChat } from '@/hooks/useAssistantChat';
 import { ChatMessage } from '@/components/assistant/ChatMessage';
-import { SourcesPanel } from '@/components/assistant/SourcesPanel';
 import { AnalyzeFilePicker } from '@/components/assistant/AnalyzeFilePicker';
 import { cn } from '@/lib/utils';
 
@@ -30,9 +27,7 @@ interface ProjectAssistantProps {
 export function ProjectAssistant({ projectId, projectName }: ProjectAssistantProps) {
   const { messages, isLoading, sendMessage, clearMessages, analyzeDocument } = useAssistantChat({ projectId });
   const [input, setInput] = useState('');
-  const [showSources, setShowSources] = useState(true);
   const [showFilePicker, setShowFilePicker] = useState(false);
-  const [highlightedCitation, setHighlightedCitation] = useState<string>();
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -44,13 +39,6 @@ export function ProjectAssistant({ projectId, projectName }: ProjectAssistantPro
     'Quais lacunas de conhecimento foram identificadas?',
   ];
 
-  // Collect all sources from all messages
-  const allSources = messages
-    .filter(m => m.role === 'assistant' && m.sources)
-    .flatMap(m => m.sources || [])
-    .filter((source, index, self) => 
-      index === self.findIndex(s => s.citation === source.citation)
-    );
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -71,12 +59,6 @@ export function ProjectAssistant({ projectId, projectName }: ProjectAssistantPro
     sendMessage(question);
   };
 
-  const handleSourceClick = (citation: string) => {
-    setHighlightedCitation(citation);
-    setShowSources(true);
-    // Clear highlight after 2 seconds
-    setTimeout(() => setHighlightedCitation(undefined), 2000);
-  };
 
   const hasMessages = messages.length > 0;
 
@@ -129,19 +111,6 @@ export function ProjectAssistant({ projectId, projectName }: ProjectAssistantPro
               <FileSearch className="h-3 w-3" />
               Analisar
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowSources(!showSources)}
-              className="h-8 gap-1 text-xs"
-            >
-              {showSources ? (
-                <PanelRightClose className="h-3 w-3" />
-              ) : (
-                <PanelRightOpen className="h-3 w-3" />
-              )}
-              Fontes
-            </Button>
           </div>
         </div>
 
@@ -186,7 +155,6 @@ export function ProjectAssistant({ projectId, projectName }: ProjectAssistantPro
                   <ChatMessage
                     key={message.id}
                     message={message}
-                    onSourceClick={handleSourceClick}
                   />
                 ))}
                 {isLoading && (
@@ -238,17 +206,6 @@ export function ProjectAssistant({ projectId, projectName }: ProjectAssistantPro
         </div>
       </div>
 
-      {/* Sources Panel */}
-      {showSources && (
-        <div className="w-72 border-l hidden md:block">
-          <SourcesPanel
-            sources={allSources}
-            highlightedCitation={highlightedCitation}
-            onClose={() => setShowSources(false)}
-            projectContext={projectName}
-          />
-        </div>
-      )}
 
       {/* Analyze File Picker */}
       <AnalyzeFilePicker
