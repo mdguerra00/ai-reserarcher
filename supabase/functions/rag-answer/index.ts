@@ -2177,14 +2177,15 @@ function selectCriticalDocs(
 }
 
 // ==========================================
-// IDER: Deep read critical docs (reuses existing performDeepRead)
+// IDER: Deep read critical docs (full read + intelligent filter)
 // ==========================================
 async function deepReadCriticalDocs(
-  supabase: any, criticalDocs: CriticalDoc[], query: string
-): Promise<{ doc_id: string; text: string; sections_included: string[] }[]> {
-  const results: { doc_id: string; text: string; sections_included: string[] }[] = [];
+  supabase: any, criticalDocs: CriticalDoc[], query: string, apiKey: string, tier: ModelTier = 'advanced'
+): Promise<{ doc_id: string; text: string; sections_included: string[]; total_chars: number; filtered_chars: number }[]> {
+  const limits = DEEP_READ_TIERS[tier];
+  const results: { doc_id: string; text: string; sections_included: string[]; total_chars: number; filtered_chars: number }[] = [];
 
-  for (const doc of criticalDocs.slice(0, 3)) {
+  for (const doc of criticalDocs.slice(0, limits.maxFiles)) {
     // Priority: sections like Results, Discussion, Methods
     const { data: structures } = await supabase
       .from('document_structure')
@@ -2193,23 +2194,28 @@ async function deepReadCriticalDocs(
       .in('section_type', ['results', 'discussion', 'conclusion', 'methods', 'abstract'])
       .order('section_index');
 
-    // Fetch chunks for this document
+    // Fetch ALL chunks for this document (no limit)
     const { data: chunks } = await supabase
       .from('search_chunks')
       .select('chunk_text, chunk_index, metadata')
       .eq('source_id', doc.doc_id)
-      .order('chunk_index', { ascending: true })
-      .limit(30);
+      .order('chunk_index', { ascending: true });
 
     if (!chunks || chunks.length === 0) continue;
 
     const fullText = chunks.map((c: any) => c.chunk_text).join('\n\n');
+    const totalChars = fullText.length;
     const sectionsIncluded = (structures || []).map((s: any) => s.section_type);
+
+    // Apply intelligent filtering
+    const filteredText = await intelligentDocFilter(fullText, query, limits.filteredCharsPerDoc, apiKey);
 
     results.push({
       doc_id: doc.doc_id,
-      text: fullText.substring(0, 12000),
+      text: filteredText,
       sections_included: sectionsIncluded,
+      total_chars: totalChars,
+      filtered_chars: filteredText.length,
     });
   }
 
