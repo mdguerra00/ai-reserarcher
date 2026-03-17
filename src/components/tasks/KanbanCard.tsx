@@ -111,8 +111,23 @@ export function KanbanCard({ task, members, onClick, isDragOverlay }: KanbanCard
         </div>
       )}
 
-      {/* Title */}
-      <p className="text-sm font-medium line-clamp-2 mb-2">{task.title}</p>
+      {/* Title + Observer */}
+      <p className="text-sm font-medium line-clamp-2 mb-1">{task.title}</p>
+      {isObserver && (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex items-center gap-1 rounded-full bg-muted px-1.5 py-0 text-[9px] font-medium text-muted-foreground mb-2">
+                <Eye className="h-2.5 w-2.5" />
+                Observador
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Você pode acompanhar, mas não está atribuída a você</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
 
       {/* Tags */}
       {task.tags && task.tags.length > 0 && (
