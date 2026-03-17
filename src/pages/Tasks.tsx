@@ -260,11 +260,14 @@ export default function Tasks() {
           </CardHeader>
         </Card>
       ) : (
+        <TooltipProvider>
         <div className="space-y-3">
-          {paginatedTasks.map((task) => (
+          {paginatedTasks.map((task) => {
+            const isObserver = task.assigned_to !== user?.id;
+            return (
             <Card 
               key={task.id} 
-              className="hover:border-primary/50 transition-colors cursor-pointer"
+              className={`hover:border-primary/50 transition-colors cursor-pointer ${isObserver ? 'border-dashed' : ''}`}
               onClick={() => handleTaskClick(task)}
             >
               <CardContent className="flex items-center justify-between py-4">
@@ -272,7 +275,22 @@ export default function Tasks() {
                   <div className={`w-1 h-10 rounded-full ${priorityColors[task.priority]}`} 
                        style={{ backgroundColor: 'currentColor', opacity: 0.5 }} />
                   <div>
-                    <p className="font-medium">{task.title}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium">{task.title}</p>
+                      {isObserver && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                              <Eye className="h-3 w-3" />
+                              Observador
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Você pode acompanhar esta tarefa, mas ela não está atribuída a você</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                    </div>
                     <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
                       {task.projects?.name && (
                         <span>{task.projects.name}</span>
