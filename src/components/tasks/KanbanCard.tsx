@@ -48,6 +48,8 @@ export function KanbanCard({ task, members, onClick, isDragOverlay }: KanbanCard
   const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'done';
   const isBlocked = task.status === 'blocked';
   const isDone = task.status === 'done';
+  const isObserver = task.assigned_to !== user?.id;
+  const priority = priorityConfig[task.priority] || priorityConfig.medium;
   const priority = priorityConfig[task.priority] || priorityConfig.medium;
 
   // Decision-based coloring for completed tasks
