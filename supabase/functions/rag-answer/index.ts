@@ -4307,6 +4307,11 @@ serve(async (req) => {
       context_mode: contextMode, project_name: projectName,
       pipeline: stdPipeline, latency_ms: latencyMs,
       _diagnostics: stdDiag,
+      _deep_read: deepReadResult.filesRead.length > 0 ? {
+        files_read: deepReadResult.filesRead,
+        total_read_ms: deepReadResult.totalReadMs,
+        filter_ms: deepReadResult.filterMs,
+      } : undefined,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
   } catch (error) {
