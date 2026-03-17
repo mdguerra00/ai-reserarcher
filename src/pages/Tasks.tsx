@@ -362,6 +362,7 @@ export default function Tasks() {
             </div>
           )}
         </div>
+        </TooltipProvider>
       )}
 
       {/* Task Detail Modal */}
