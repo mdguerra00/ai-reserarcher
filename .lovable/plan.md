@@ -1,131 +1,99 @@
 
 
-# Auto-Alias + Provisional Auto-Pass: Implementation Plan
+# Diagnóstico: O Pipeline Atual NÃO Lê os Documentos Completos
 
-## Overview
+## Limitações Reais do Código Atual
 
-Create a dynamic alias system with 3 new tables (`entity_aliases`, `alias_cache`, `migration_logs`), integration into `quickEvidenceCheck`, KV cache with pg_cron cleanup, and Admin UI with "Aliases" tab including status filters and soft-delete.
+Analisando o `rag-answer/index.ts`, as restrições são severas:
 
----
+| Parâmetro | Pipeline Padrão | IDER Mode |
+|---|---|---|
+| Arquivos lidos | **2** (`fileIds.slice(0, 2)`) | **3** (`criticalDocs.slice(0, 3)`) |
+| Chunks por arquivo | **30** | **30** |
+| Texto por arquivo | **4.000 chars** (truncado) | **12.000 chars** (truncado) |
+| Quando ativa | **Condicional** (`needsDeepRead`) | Sempre no IDER |
 
-## Step 1: SQL Migration
+Um artigo científico típico tem ~30.000-50.000 caracteres. Ou seja, mesmo no melhor caso (IDER), a IA lê **~25% de 3 documentos**. No modo padrão, lê **~10% de 2 documentos** — e só quando o plano de evidência decide que precisa.
 
-Create migration with:
-
-### Tables
-
-**entity_aliases** - Main alias store with pgvector embedding, pg_trgm GIN index, HNSW vector index, unique constraint on (entity_type, alias_norm) where not deleted. Fields include id, entity_type, canonical_name, alias, alias_norm, confidence, approved, source, needs_review, rejection_reason, created_at, approved_by, approved_at, deleted_at, embedding vector(1536).
-
-RLS:
-- SELECT for authenticated users
-- ALL for admin via has_role
-- ALL for service_role (explicit bypass)
-
-**alias_cache** - KV cache with (term_norm, entity_type) composite PK, result jsonb, cached_at, hit_count. RLS: service_role only. pg_cron job every 10min to clean entries older than 30min.
-
-**migration_logs** - Simple log table (id, message, created_at). RLS: service_role only.
-
-### Seed
-
-Populate ~100+ aliases from:
-- metrics_catalog (65 entries with aliases arrays)
-- Hardcoded additive aliases (silver_nanoparticles, silica_nanoparticle, bomar, tegdma, udma, bisgma, hals, uv_absorber, antioxidant)
-- Hardcoded material aliases (vitality, filtek, charisma, tetric, grandio, z350, z250, brilliant, herculite, clearfil, estelite, ips, ceram, nextdent, keysplint, luxaprint)
-
-All with approved=true, source='legacy_hardcoded', confidence=1.0. Use ON CONFLICT DO NOTHING, log collisions to migration_logs.
+O resto da resposta vem de **fragmentos de ~300-500 chars** (chunks) sem contexto completo.
 
 ---
 
-## Step 2: Edge Function Changes (rag-answer/index.ts)
+## Proposta: Pipeline de Leitura Total em 3 Estágios
 
-### 2a. Configurable Constants (top of file)
+### Estágio 1 — Retrieval & Mapeamento (sem mudança conceitual)
+- Busca híbrida recupera chunks + experimentos
+- **Novo**: Coletar TODOS os `source_id` (file_ids) únicos dos chunks recuperados
+- Rankear por frequência: arquivo citado 5x > arquivo citado 1x
 
-```
-const STRUCTURAL_WEIGHT = 1.0;
-const CHUNK_WEIGHT = 0.5;
-const CHUNK_EVIDENCE_THRESHOLD = 0.75;
-const ALIAS_AUTOPASS_THRESHOLD = 0.80;
-const ALIAS_SUGGEST_THRESHOLD = 0.70;
-const ALIAS_AMBIGUITY_DELTA = 0.05;
-const MAX_UNKNOWN_TERMS_PER_QUERY = 5;
-```
+### Estágio 2 — Leitura Completa + Filtragem Inteligente (mudança principal)
 
-### 2b. normalizeTermWithUnits helper
+**2a. Leitura completa**: Para os top N arquivos referenciados:
+- Buscar TODOS os chunks do arquivo (sem `limit 30`)
+- Reconstruir o texto completo (sem truncamento em 4k)
+- Limite prático: ~100k chars por arquivo (artigos longos)
 
-Converts:
-- X microns/um -> X*1000 nm
-- X Pa.s -> X*1000 mPa.s
-- Lowercase + unaccent
+**2b. Filtragem inteligente por IA** (novo): Um modelo leve (`gemini-2.5-flash-lite`) recebe:
+- O documento completo reconstruído
+- A pergunta do usuário
+- Instrução: "Extraia APENAS os trechos relevantes para responder esta pergunta. Mantenha números, tabelas, conclusões e contexto necessário. Máximo 8.000 chars por documento."
 
-Returns { original, normalized, ruleApplied }.
+Isso é fundamentalmente diferente de truncar cegamente — a IA lê o documento inteiro e **decide o que importa**.
 
-### 2c. suggestAlias function
+**2c. Limites escaláveis por tier**:
 
-1. Normalize term
-2. Check alias_cache (TTL 30min) - if hit, increment hit_count and return
-3. Exact match in entity_aliases (alias_norm = term_norm AND approved AND NOT deleted)
-4. If not found, generate embedding via text-embedding-3-small (LOVABLE_API_KEY)
-5. Vector search top-3 in entity_aliases
-6. Conflict detection: delta top1-top2 < 0.05 -> ambiguous=true
-7. Save result to alias_cache (upsert)
-8. Limit: max 5 unknown terms per query
+| Tier | Arquivos lidos | Chars filtrados por doc | Total máximo |
+|---|---|---|---|
+| Fast | 3 | 4k | 12k |
+| Standard | 5 | 8k | 40k |
+| Advanced/IDER | 8 | 12k | 96k |
 
-### 2d. Gating update in quickEvidenceCheck
-
-For each constraint not found by hardcoded maps:
-1. Query entity_aliases for approved exact match
-2. If approved match -> strong match
-3. If not -> suggestAlias:
-   - Provisional auto-pass: score >= 0.80 AND !ambiguous AND textualEvidence=true
-   - textualEvidence with explicit weight: title/conditions/metrics = 1.0, chunks = 0.5 (only if score > 0.75)
-   - Conflict -> fail-closed reason='ambiguous_alias'
-   - Score < 0.80 or no evidence -> fail-closed reason='suggested_alias_pending'
-4. Persistence: score >= 0.70 and alias doesn't exist -> upsert entity_aliases with approved=false, source='user_query_suggest'
-
-### 2e. Diagnostics expansion
-
-Add to DiagnosticsInput and buildDiagnostics:
-- suggested_aliases array with full details per term
-- alias_lookup_latency_ms
-- textual_evidence_weight_calculated
-- If alias_lookup_latency_ms > 500, add 'alias_lookup_slow' to verification.issue_types
+### Estágio 3 — Síntese Final (modelo avançado)
+- Recebe: contexto filtrado inteligentemente + chunks originais + experimentos + métricas
+- O modelo de síntese agora tem contexto **curado e completo**, não fragmentos cegos
 
 ---
 
-## Step 3: Admin UI
+## Mudanças Técnicas
 
-### 3a. New AliasApprovalTab component
+### `supabase/functions/rag-answer/index.ts`
 
-`src/components/admin/AliasApprovalTab.tsx`:
-- Table listing entity_aliases
-- Search input by alias_norm or canonical_name (ILIKE)
-- Status filter: All / Pending / Approved / Rejected
-- Status column with colored badges (green=approved, yellow=pending, red=rejected)
-- Actions: Approve, Reject (soft-delete with required rejection_reason), Restore, Edit canonical_name
-- Rejection reason column
+1. **`performDeepRead` reescrito**:
+   - Remover `slice(0, 2)` e `limit(30)` e `.substring(0, 4000)`
+   - Buscar todos os chunks por arquivo sem limite
+   - Reconstruir texto completo
 
-### 3b. Admin.tsx integration
+2. **Nova função `intelligentDocFilter`**:
+   - Chamada ao modelo leve com documento completo + pergunta
+   - Retorna trechos curados (~4-12k chars por doc dependendo do tier)
+   - Fallback: se o modelo falhar, truncar nos primeiros N chars (comportamento atual como safety net)
 
-Add "Aliases" tab with BookText icon to existing tabs.
+3. **Deep read SEMPRE ativo**:
+   - Remover condicional `if (evidencePlanResult.needsDeepRead)`
+   - Sempre executar para os top N arquivos referenciados
+
+4. **Coleta agressiva de file_ids**:
+   - De chunks: `source_id`
+   - De experimentos: arquivo de origem
+   - De knowledge_items: `file_id` se existir
+   - Rankear por frequência + score
+
+5. **Metadata de estágios no response**:
+   - `stages: { retrieval_ms, deep_read_ms, filter_ms, synthesis_ms }`
+   - `files_read: [{ name, total_chars, filtered_chars }]`
+
+### `src/components/assistant/ChatMessage.tsx`
+- Indicador visual opcional: "📖 Leu 5 documentos (142k chars → 38k filtrados)"
+
+### `src/hooks/useAssistantChat.ts`
+- Passar metadata de estágios para o componente
 
 ---
 
-## Files Modified
+## Impacto
 
-| File | Change |
-|------|--------|
-| New SQL migration | 3 tables + indexes + RLS + pg_cron + seed |
-| `supabase/functions/rag-answer/index.ts` | normalizeTermWithUnits, suggestAlias, KV cache, gating with entity_aliases, configurable constants, expanded diagnostics |
-| `src/pages/Admin.tsx` | New "Aliases" tab |
-| `src/components/admin/AliasApprovalTab.tsx` | New component |
-
-## Safety Constraints
-
-1. Auto-pass only with structural evidence (weight 1.0 for title/conditions/metrics; 0.5 for chunks with threshold 0.75)
-2. Unit normalization lossless (ruleApplied recorded; no nano/micro reclassification)
-3. Canonical conflict blocks auto-pass (delta < 0.05 -> ambiguous_alias)
-4. Max 5 unknown terms per query
-5. All suggestions enter as approved=false
-6. KV cache TTL 30min with pg_cron cleanup + hit_count increment
-7. Explicit service role bypass in RLS
+- **Qualidade**: A IA de síntese recebe contexto curado por outra IA que leu o documento inteiro — não fragmentos truncados cegamente
+- **Latência**: +3-6s (leitura completa + filtragem). Aceitável para respostas de qualidade.
+- **Custo**: +1 chamada ao flash-lite por arquivo lido (~5 chamadas por consulta)
+- **Segurança**: O filtro inteligente nunca inventa dados — apenas seleciona trechos do documento real
 
