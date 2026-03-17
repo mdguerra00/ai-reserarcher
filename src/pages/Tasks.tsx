@@ -202,7 +202,7 @@ export default function Tasks() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Tarefas</h1>
         <p className="text-muted-foreground">
-Acompanhe as tarefas atribuídas a você
+          Acompanhe todas as tarefas dos seus projetos
         </p>
       </div>
 
