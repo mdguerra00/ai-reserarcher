@@ -90,11 +90,25 @@ export default function Tasks() {
     try {
       if (!user) return;
 
+      // Fetch all projects where user is a member
+      const { data: memberships } = await supabase
+        .from('project_members')
+        .select('project_id')
+        .eq('user_id', user.id);
+
+      const projectIds = memberships?.map(m => m.project_id) || [];
+
+      if (projectIds.length === 0) {
+        setTasks([]);
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('tasks')
         .select('*, projects(name)')
         .is('deleted_at', null)
-        .eq('assigned_to', user.id)
+        .in('project_id', projectIds)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
