@@ -4147,6 +4147,17 @@ serve(async (req) => {
     );
 
     // ==========================================
+    // COMPLEXITY ASSESSMENT & MODEL ROUTING (before deep read to determine tier)
+    // ==========================================
+    const evidenceGapCount = evidencePlanResult.plan.match(/Lacunas:.*?;/g)?.length || 0;
+    const complexity = assessQueryComplexity(
+      query, finalChunks.length, isComparative, iderIntent.isIDERQuery,
+      preConstraints.hasStrongConstraints, false, evidenceGapCount,
+    );
+    const selectedModel = getModelForTier(complexity.tier);
+    console.log(`Model routing: tier=${complexity.tier}, score=${complexity.score}, model=${selectedModel}, reasons=${complexity.reasons.join(',')}`);
+
+    // ==========================================
     // CONTEXT EXPANSION: ALWAYS Deep Read (staged pipeline)
     // ==========================================
     let deepReadContent = '';
@@ -4160,26 +4171,13 @@ serve(async (req) => {
     
     if (allCriticalFileIds.length > 0) {
       console.log(`Deep read ALWAYS ACTIVE for ${allCriticalFileIds.length} files (mode: ${contextMode})`);
-      const deepReadTier = complexity?.tier || 'standard';
       [deepReadResult, docStructure] = await Promise.all([
-        performDeepRead(supabase, allCriticalFileIds, query, lovableApiKey, deepReadTier),
+        performDeepRead(supabase, allCriticalFileIds, query, lovableApiKey, complexity.tier),
         fetchDocumentStructure(supabase, allCriticalFileIds),
       ]);
       deepReadContent = deepReadResult.text;
       console.log(`Deep read complete: ${deepReadResult.filesRead.length} files, total=${deepReadResult.filesRead.reduce((s, f) => s + f.totalChars, 0)} chars, filtered=${deepReadResult.filesRead.reduce((s, f) => s + f.filteredChars, 0)} chars, readMs=${deepReadResult.totalReadMs}, filterMs=${deepReadResult.filterMs}`);
     }
-
-    // ==========================================
-    // COMPLEXITY ASSESSMENT & MODEL ROUTING
-    // ==========================================
-    const evidenceGapCount = evidencePlanResult.plan.match(/Lacunas:.*?;/g)?.length || 0;
-    const complexity = assessQueryComplexity(
-      query, finalChunks.length, isComparative, iderIntent.isIDERQuery,
-      preConstraints.hasStrongConstraints, false, evidenceGapCount,
-    );
-    const selectedModel = getModelForTier(complexity.tier);
-    console.log(`Model routing: tier=${complexity.tier}, score=${complexity.score}, model=${selectedModel}, reasons=${complexity.reasons.join(',')}`);
-
     // ==========================================
     // STEP B: SYNTHESIS (with Knowledge Facts injected)
     // ==========================================
