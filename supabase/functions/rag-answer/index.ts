@@ -1330,32 +1330,151 @@ async function fetchDocumentStructure(supabase: any, fileIds: string[]): Promise
 }
 
 // ==========================================
-// DEEP READ
+// DEEP READ: Full document reconstruction + intelligent filtering
 // ==========================================
-async function performDeepRead(supabase: any, fileIds: string[], query: string): Promise<string> {
-  if (fileIds.length === 0) return '';
+// Tier-based limits for deep read
+const DEEP_READ_TIERS: Record<ModelTier, { maxFiles: number; filteredCharsPerDoc: number }> = {
+  fast: { maxFiles: 3, filteredCharsPerDoc: 4000 },
+  standard: { maxFiles: 5, filteredCharsPerDoc: 8000 },
+  advanced: { maxFiles: 8, filteredCharsPerDoc: 12000 },
+};
 
-  let deepReadText = '\n\n=== LEITURA PROFUNDA DE DOCUMENTOS CRÍTICOS ===\n\n';
+interface DeepReadResult {
+  text: string;
+  filesRead: { name: string; fileId: string; totalChars: number; filteredChars: number }[];
+  totalReadMs: number;
+  filterMs: number;
+}
+
+async function intelligentDocFilter(
+  fullText: string, query: string, maxChars: number, apiKey: string
+): Promise<string> {
+  // If text is already short enough, no filtering needed
+  if (fullText.length <= maxChars) return fullText;
+
+  try {
+    const filterPrompt = `Você é um filtro de documentos científicos. Receba o DOCUMENTO COMPLETO abaixo e a PERGUNTA do usuário.
+
+TAREFA: Extraia APENAS os trechos do documento que são relevantes para responder a pergunta. Mantenha:
+- Números, valores, medições e unidades relevantes
+- Tabelas e dados tabulares relacionados
+- Conclusões e resultados pertinentes
+- Contexto metodológico necessário para interpretar os dados
+- Hipóteses e objetivos relacionados
+
+NÃO inclua:
+- Referências bibliográficas
+- Agradecimentos
+- Seções irrelevantes à pergunta
+- Texto repetitivo
+
+LIMITE: Máximo ${maxChars} caracteres. Priorize dados quantitativos e conclusões.
+
+PERGUNTA: ${query}
+
+DOCUMENTO COMPLETO:
+${fullText.substring(0, 100000)}`;
+
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash-lite",
+        messages: [{ role: "user", content: filterPrompt }],
+        temperature: 0.0,
+        max_tokens: Math.ceil(maxChars / 3), // rough token estimate
+      }),
+    });
+
+    if (!response.ok) {
+      console.warn(`intelligentDocFilter failed (${response.status}), falling back to truncation`);
+      return fullText.substring(0, maxChars);
+    }
+
+    const data = await response.json();
+    const filtered = data.choices?.[0]?.message?.content || '';
+    return filtered.substring(0, maxChars) || fullText.substring(0, maxChars);
+  } catch (e) {
+    console.warn('intelligentDocFilter error, falling back to truncation:', e);
+    return fullText.substring(0, maxChars);
+  }
+}
+
+async function performDeepRead(
+  supabase: any, fileIds: string[], query: string, apiKey: string, tier: ModelTier = 'standard'
+): Promise<DeepReadResult> {
+  const readStart = Date.now();
+  if (fileIds.length === 0) return { text: '', filesRead: [], totalReadMs: 0, filterMs: 0 };
+
+  const limits = DEEP_READ_TIERS[tier];
+  const targetFileIds = fileIds.slice(0, limits.maxFiles);
   
-  for (const fileId of fileIds.slice(0, 2)) {
+  let deepReadText = '\n\n=== LEITURA PROFUNDA DE DOCUMENTOS CRÍTICOS ===\n\n';
+  const filesRead: DeepReadResult['filesRead'] = [];
+  let filterMs = 0;
+
+  // Fetch all docs in parallel
+  const docFetches = targetFileIds.map(async (fileId) => {
     const { data: chunks } = await supabase
       .from('search_chunks')
       .select('chunk_text, chunk_index, metadata')
       .eq('source_id', fileId)
-      .order('chunk_index', { ascending: true })
-      .limit(30);
+      .order('chunk_index', { ascending: true });
+    // No limit — fetch ALL chunks
 
-    if (!chunks || chunks.length === 0) continue;
+    return { fileId, chunks: chunks || [] };
+  });
+
+  const allDocs = await Promise.all(docFetches);
+
+  for (const { fileId, chunks } of allDocs) {
+    if (chunks.length === 0) continue;
 
     const fileName = chunks[0]?.metadata?.title || 'Documento';
-    deepReadText += `📖 DOCUMENTO COMPLETO: ${fileName}\n`;
-    deepReadText += `   (${chunks.length} trechos reconstruídos)\n\n`;
-    
     const fullText = chunks.map((c: any) => c.chunk_text).join('\n\n');
-    deepReadText += fullText.substring(0, 4000) + (fullText.length > 4000 ? '\n[...truncado...]' : '') + '\n\n';
+    const totalChars = fullText.length;
+
+    // Intelligent filtering
+    const filterStart = Date.now();
+    const filteredText = await intelligentDocFilter(fullText, query, limits.filteredCharsPerDoc, apiKey);
+    filterMs += Date.now() - filterStart;
+
+    filesRead.push({ name: fileName, fileId, totalChars, filteredChars: filteredText.length });
+
+    deepReadText += `📖 DOCUMENTO: ${fileName}\n`;
+    deepReadText += `   (${chunks.length} trechos, ${totalChars} chars total → ${filteredText.length} chars filtrados)\n\n`;
+    deepReadText += filteredText + '\n\n';
   }
 
-  return deepReadText;
+  return {
+    text: deepReadText,
+    filesRead,
+    totalReadMs: Date.now() - readStart,
+    filterMs,
+  };
+}
+
+// Collect all unique file_ids from chunks, experiments, and knowledge items, ranked by frequency
+function collectReferencedFileIds(
+  chunks: ChunkSource[],
+  experimentSources: any[],
+  criticalFileIds: string[],
+): string[] {
+  const freqMap = new Map<string, number>();
+  
+  // From chunks (source_id = file_id)
+  for (const c of chunks) {
+    if (c.source_id) freqMap.set(c.source_id, (freqMap.get(c.source_id) || 0) + 1);
+  }
+  
+  // From critical file ids (from experiment context)
+  for (const fid of criticalFileIds) {
+    freqMap.set(fid, (freqMap.get(fid) || 0) + 3); // boost experiment-referenced files
+  }
+  
+  return Array.from(freqMap.entries())
+    .sort((a, b) => b[1] - a[1])
+    .map(([id]) => id);
 }
 
 // ==========================================
