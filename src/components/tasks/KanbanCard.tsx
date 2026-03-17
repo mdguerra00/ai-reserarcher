@@ -50,7 +50,6 @@ export function KanbanCard({ task, members, onClick, isDragOverlay }: KanbanCard
   const isDone = task.status === 'done';
   const isObserver = task.assigned_to !== user?.id;
   const priority = priorityConfig[task.priority] || priorityConfig.medium;
-  const priority = priorityConfig[task.priority] || priorityConfig.medium;
 
   // Decision-based coloring for completed tasks
   const getDecisionStyle = () => {
