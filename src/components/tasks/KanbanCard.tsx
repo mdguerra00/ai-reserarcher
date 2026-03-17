@@ -2,7 +2,9 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Calendar, AlertTriangle, Lock } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Calendar, AlertTriangle, Lock, Eye } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 import type { KanbanTask } from './KanbanBoard';
 
 interface MemberInfo {
@@ -27,6 +29,7 @@ interface KanbanCardProps {
 }
 
 export function KanbanCard({ task, members, onClick, isDragOverlay }: KanbanCardProps) {
+  const { user } = useAuth();
   const {
     attributes,
     listeners,
@@ -45,6 +48,7 @@ export function KanbanCard({ task, members, onClick, isDragOverlay }: KanbanCard
   const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'done';
   const isBlocked = task.status === 'blocked';
   const isDone = task.status === 'done';
+  const isObserver = task.assigned_to !== user?.id;
   const priority = priorityConfig[task.priority] || priorityConfig.medium;
 
   // Decision-based coloring for completed tasks
@@ -107,8 +111,23 @@ export function KanbanCard({ task, members, onClick, isDragOverlay }: KanbanCard
         </div>
       )}
 
-      {/* Title */}
-      <p className="text-sm font-medium line-clamp-2 mb-2">{task.title}</p>
+      {/* Title + Observer */}
+      <p className="text-sm font-medium line-clamp-2 mb-1">{task.title}</p>
+      {isObserver && (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex items-center gap-1 rounded-full bg-muted px-1.5 py-0 text-[9px] font-medium text-muted-foreground mb-2">
+                <Eye className="h-2.5 w-2.5" />
+                Observador
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Você pode acompanhar, mas não está atribuída a você</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
 
       {/* Tags */}
       {task.tags && task.tags.length > 0 && (

@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -33,6 +34,7 @@ import {
   Calendar,
   MoreHorizontal,
   Pencil,
+  Eye,
   Trash2,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -90,11 +92,25 @@ export default function Tasks() {
     try {
       if (!user) return;
 
+      // Fetch all projects where user is a member
+      const { data: memberships } = await supabase
+        .from('project_members')
+        .select('project_id')
+        .eq('user_id', user.id);
+
+      const projectIds = memberships?.map(m => m.project_id) || [];
+
+      if (projectIds.length === 0) {
+        setTasks([]);
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('tasks')
         .select('*, projects(name)')
         .is('deleted_at', null)
-        .eq('assigned_to', user.id)
+        .in('project_id', projectIds)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -186,7 +202,7 @@ export default function Tasks() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Tarefas</h1>
         <p className="text-muted-foreground">
-Acompanhe as tarefas atribuídas a você
+          Acompanhe todas as tarefas dos seus projetos
         </p>
       </div>
 
@@ -244,11 +260,14 @@ Acompanhe as tarefas atribuídas a você
           </CardHeader>
         </Card>
       ) : (
+        <TooltipProvider>
         <div className="space-y-3">
-          {paginatedTasks.map((task) => (
+          {paginatedTasks.map((task) => {
+            const isObserver = task.assigned_to !== user?.id;
+            return (
             <Card 
               key={task.id} 
-              className="hover:border-primary/50 transition-colors cursor-pointer"
+              className={`hover:border-primary/50 transition-colors cursor-pointer ${isObserver ? 'border-dashed' : ''}`}
               onClick={() => handleTaskClick(task)}
             >
               <CardContent className="flex items-center justify-between py-4">
@@ -256,7 +275,22 @@ Acompanhe as tarefas atribuídas a você
                   <div className={`w-1 h-10 rounded-full ${priorityColors[task.priority]}`} 
                        style={{ backgroundColor: 'currentColor', opacity: 0.5 }} />
                   <div>
-                    <p className="font-medium">{task.title}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium">{task.title}</p>
+                      {isObserver && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                              <Eye className="h-3 w-3" />
+                              Observador
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Você pode acompanhar esta tarefa, mas ela não está atribuída a você</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                    </div>
                     <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
                       {task.projects?.name && (
                         <span>{task.projects.name}</span>
@@ -297,7 +331,9 @@ Acompanhe as tarefas atribuídas a você
                 </div>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
+
 
           {/* Pagination */}
           {totalPages > 1 && (
@@ -326,6 +362,7 @@ Acompanhe as tarefas atribuídas a você
             </div>
           )}
         </div>
+        </TooltipProvider>
       )}
 
       {/* Task Detail Modal */}
