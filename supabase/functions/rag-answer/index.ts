@@ -3941,7 +3941,7 @@ serve(async (req) => {
 
           if (externalDocs.length === 0) {
             const criticalDocs = selectCriticalDocs(evidenceGraph, insightSeeds);
-            const deepReadPack = await deepReadCriticalDocs(supabase, criticalDocs, query);
+            const deepReadPack = await deepReadCriticalDocs(supabase, criticalDocs, query, lovableApiKey, 'advanced');
             const { response: iderResponse } = await synthesizeIDER(query, evidenceGraph, deepReadPack, insightSeeds, lovableApiKey, MODEL_TIERS.advanced);
             const auditIssues = await auditIDER(iderResponse, evidenceGraph, lovableApiKey);
             const iderVerification = verifyIDERNumbers(iderResponse, evidenceGraph);
