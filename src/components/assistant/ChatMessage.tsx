@@ -198,6 +198,18 @@ export function ChatMessage({ message, userQuestion }: ChatMessageProps) {
             </ReactMarkdown>
           </div>
 
+          {/* Deep Read indicator */}
+          {message.deepRead && message.deepRead.files_read.length > 0 && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded-md px-3 py-1.5">
+              <BookOpen className="h-3.5 w-3.5 text-primary shrink-0" />
+              <span>
+                📖 Leu {message.deepRead.files_read.length} documento{message.deepRead.files_read.length > 1 ? 's' : ''}{' '}
+                ({(message.deepRead.files_read.reduce((s, f) => s + f.totalChars, 0) / 1000).toFixed(0)}k chars →{' '}
+                {(message.deepRead.files_read.reduce((s, f) => s + f.filteredChars, 0) / 1000).toFixed(0)}k filtrados)
+              </span>
+            </div>
+          )}
+
           {message.sources && message.sources.length > 0 && (
             <div className="flex flex-wrap gap-1 pt-2">
               <span className="text-xs text-muted-foreground">Fontes:</span>
