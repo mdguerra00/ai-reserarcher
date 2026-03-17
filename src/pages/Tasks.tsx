@@ -331,7 +331,9 @@ export default function Tasks() {
                 </div>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
+
 
           {/* Pagination */}
           {totalPages > 1 && (
