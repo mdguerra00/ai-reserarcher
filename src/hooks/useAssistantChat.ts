@@ -11,6 +11,12 @@ export interface ChatSource {
   excerpt: string;
 }
 
+export interface DeepReadInfo {
+  files_read: { name: string; fileId: string; totalChars: number; filteredChars: number }[];
+  total_read_ms: number;
+  filter_ms: number;
+}
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
@@ -21,6 +27,7 @@ export interface ChatMessage {
   analysisFileId?: string;
   analysisProjectId?: string;
   diagnostics?: Record<string, any>;
+  deepRead?: DeepReadInfo;
 }
 
 export interface Conversation {
@@ -215,6 +222,7 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
         sources: data.sources || [],
         timestamp: new Date(),
         diagnostics: data._diagnostics || undefined,
+        deepRead: data._deep_read || undefined,
       };
 
       if (data._diagnostics) {
