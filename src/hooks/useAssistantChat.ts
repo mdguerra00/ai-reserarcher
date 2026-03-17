@@ -222,6 +222,7 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
         sources: data.sources || [],
         timestamp: new Date(),
         diagnostics: data._diagnostics || undefined,
+        deepRead: data._deep_read || undefined,
       };
 
       if (data._diagnostics) {
