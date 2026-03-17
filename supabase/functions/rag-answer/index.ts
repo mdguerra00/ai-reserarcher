@@ -3648,8 +3648,8 @@ serve(async (req) => {
       console.log(`IDER: ${criticalDocs.length} critical docs, ${iderKnowledgeFacts.diagnostics.manual_knowledge_hits} knowledge facts`);
 
       // Step 4: Deep read critical docs
-      const deepReadPack = await deepReadCriticalDocs(supabase, criticalDocs, query);
-      console.log(`IDER: deep read ${deepReadPack.length} docs, ${deepReadPack.reduce((s, d) => s + d.text.length, 0)} chars`);
+      const deepReadPack = await deepReadCriticalDocs(supabase, criticalDocs, query, lovableApiKey, 'advanced');
+      console.log(`IDER: deep read ${deepReadPack.length} docs, total=${deepReadPack.reduce((s, d) => s + d.total_chars, 0)} chars, filtered=${deepReadPack.reduce((s, d) => s + d.filtered_chars, 0)} chars`);
 
       // Inject knowledge facts into deep read pack as a virtual document
       if (iderKnowledgeFacts.contextText) {
