@@ -34,6 +34,7 @@ import {
   Calendar,
   MoreHorizontal,
   Pencil,
+  Eye,
   Trash2,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
