@@ -4147,18 +4147,26 @@ serve(async (req) => {
     );
 
     // ==========================================
-    // CONTEXT EXPANSION: Deep Read if needed
+    // CONTEXT EXPANSION: ALWAYS Deep Read (staged pipeline)
     // ==========================================
     let deepReadContent = '';
+    let deepReadResult: DeepReadResult = { text: '', filesRead: [], totalReadMs: 0, filterMs: 0 };
     let docStructure = '';
-    const allCriticalFileIds = [...new Set([...criticalFileIds, ...evidencePlanResult.deepReadFileIds])];
     
-    if (evidencePlanResult.needsDeepRead && allCriticalFileIds.length > 0) {
-      console.log(`Deep read triggered for ${allCriticalFileIds.length} files (mode: ${contextMode})`);
-      [deepReadContent, docStructure] = await Promise.all([
-        performDeepRead(supabase, allCriticalFileIds, query),
+    // Collect ALL referenced file_ids aggressively
+    const allReferencedFileIds = collectReferencedFileIds(finalChunks, experimentSources, criticalFileIds);
+    // Also merge any file IDs suggested by the evidence plan
+    const allCriticalFileIds = [...new Set([...allReferencedFileIds, ...evidencePlanResult.deepReadFileIds])];
+    
+    if (allCriticalFileIds.length > 0) {
+      console.log(`Deep read ALWAYS ACTIVE for ${allCriticalFileIds.length} files (mode: ${contextMode})`);
+      const deepReadTier = complexity?.tier || 'standard';
+      [deepReadResult, docStructure] = await Promise.all([
+        performDeepRead(supabase, allCriticalFileIds, query, lovableApiKey, deepReadTier),
         fetchDocumentStructure(supabase, allCriticalFileIds),
       ]);
+      deepReadContent = deepReadResult.text;
+      console.log(`Deep read complete: ${deepReadResult.filesRead.length} files, total=${deepReadResult.filesRead.reduce((s, f) => s + f.totalChars, 0)} chars, filtered=${deepReadResult.filesRead.reduce((s, f) => s + f.filteredChars, 0)} chars, readMs=${deepReadResult.totalReadMs}, filterMs=${deepReadResult.filterMs}`);
     }
 
     // ==========================================
