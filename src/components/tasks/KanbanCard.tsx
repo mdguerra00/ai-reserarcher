@@ -29,6 +29,7 @@ interface KanbanCardProps {
 }
 
 export function KanbanCard({ task, members, onClick, isDragOverlay }: KanbanCardProps) {
+  const { user } = useAuth();
   const {
     attributes,
     listeners,
