@@ -323,6 +323,13 @@ export default function Tasks() {
                         Editar
                       </DropdownMenuItem>
                       <DropdownMenuItem 
+                        disabled={duplicating}
+                        onClick={(e) => { e.stopPropagation(); duplicateTask(task); }}
+                      >
+                        <Copy className="mr-2 h-4 w-4" />
+                        Duplicar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
                         onClick={(e) => handleDeleteClick(e, task)}
                         className="text-destructive focus:text-destructive"
                       >

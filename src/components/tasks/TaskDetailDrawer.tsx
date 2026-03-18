@@ -303,8 +303,22 @@ export function TaskDetailDrawer({
                 value={editTitle}
                 onChange={e => setEditTitle(e.target.value)}
                 onBlur={() => { if (editTitle !== task.title) handleFieldUpdate('title', editTitle); }}
-                className="text-lg font-semibold border-none p-0 h-auto focus-visible:ring-0 shadow-none"
+                className="text-lg font-semibold border-none p-0 h-auto focus-visible:ring-0 shadow-none flex-1"
               />
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 shrink-0"
+                    disabled={duplicating}
+                    onClick={() => duplicateTask(task)}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Duplicar tarefa</TooltipContent>
+              </Tooltip>
             </div>
             {task.description && (
               <p className="text-sm text-muted-foreground whitespace-pre-wrap mt-1">{task.description}</p>
