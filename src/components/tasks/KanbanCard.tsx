@@ -3,7 +3,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Calendar, AlertTriangle, Lock, Eye } from 'lucide-react';
+import { Calendar, AlertTriangle, Lock, Eye, MessageSquare } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import type { KanbanTask } from './KanbanBoard';
 
