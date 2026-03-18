@@ -19,7 +19,7 @@ interface KanbanColumnProps {
   unreadTaskIds?: Set<string>;
 }
 
-export function KanbanColumn({ column, tasks, members, onTaskClick }: KanbanColumnProps) {
+export function KanbanColumn({ column, tasks, members, onTaskClick, unreadTaskIds }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: column.id });
 
   const taskIds = tasks.map(t => t.id);
