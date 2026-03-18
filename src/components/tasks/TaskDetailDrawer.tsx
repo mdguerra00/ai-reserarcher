@@ -34,7 +34,9 @@ import {
   Save,
   Loader2,
   AlertTriangle,
+  Copy,
 } from 'lucide-react';
+import { useDuplicateTask } from '@/hooks/useDuplicateTask';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
