@@ -124,6 +124,8 @@ export default function Tasks() {
     }
   };
 
+  const { duplicateTask, duplicating } = useDuplicateTask(fetchTasks);
+
   useEffect(() => {
     fetchTasks();
   }, [user]);
