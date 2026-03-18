@@ -537,6 +537,7 @@ export default function ProjectDetail() {
               onTaskClick={handleTaskClick}
               onTasksChange={refreshTasks}
               onBlockedReasonRequired={handleBlockedReasonRequired}
+              unreadTaskIds={unreadTaskIds}
             />
           ) : (
             /* List view (simplified) */
