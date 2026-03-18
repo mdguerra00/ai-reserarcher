@@ -14,6 +14,153 @@ export type Database = {
   }
   public: {
     Tables: {
+      academic_papers: {
+        Row: {
+          id: string
+          doi: string | null
+          title: string
+          authors: string[]
+          abstract: string | null
+          publication_year: number | null
+          journal: string | null
+          citation_count: number
+          source_api: string
+          api_data: Json
+          pdf_url: string | null
+          open_access: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          doi?: string | null
+          title: string
+          authors?: string[]
+          abstract?: string | null
+          publication_year?: number | null
+          journal?: string | null
+          citation_count?: number
+          source_api: string
+          api_data?: Json
+          pdf_url?: string | null
+          open_access?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          doi?: string | null
+          title?: string
+          authors?: string[]
+          abstract?: string | null
+          publication_year?: number | null
+          journal?: string | null
+          citation_count?: number
+          source_api?: string
+          api_data?: Json
+          pdf_url?: string | null
+          open_access?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      academic_paper_links: {
+        Row: {
+          id: string
+          paper_id: string
+          research_id: string
+          project_id: string | null
+          linked_by: string | null
+          relevance_score: number | null
+          notes: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          paper_id: string
+          research_id: string
+          project_id?: string | null
+          linked_by?: string | null
+          relevance_score?: number | null
+          notes?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          paper_id?: string
+          research_id?: string
+          project_id?: string | null
+          linked_by?: string | null
+          relevance_score?: number | null
+          notes?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "academic_paper_links_paper_id_fkey"
+            columns: ["paper_id"]
+            isOneToOne: false
+            referencedRelation: "academic_papers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "academic_paper_links_research_id_fkey"
+            columns: ["research_id"]
+            isOneToOne: false
+            referencedRelation: "researches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "academic_paper_links_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      academic_searches: {
+        Row: {
+          id: string
+          user_id: string | null
+          project_id: string | null
+          query: string
+          source_apis: string[]
+          results_count: number
+          cached_results: Json | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          project_id?: string | null
+          query: string
+          source_apis?: string[]
+          results_count?: number
+          cached_results?: Json | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          project_id?: string | null
+          query?: string
+          source_apis?: string[]
+          results_count?: number
+          cached_results?: Json | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "academic_searches_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       alias_cache: {
         Row: {
           cached_at: string
