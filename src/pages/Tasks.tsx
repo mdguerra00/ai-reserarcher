@@ -36,6 +36,7 @@ import {
   Pencil,
   Eye,
   Trash2,
+  Copy,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
