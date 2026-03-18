@@ -241,19 +241,17 @@ export function ResearchPapersPanel({ open, onOpenChange, researchId, projectId 
                 </CardContent>
               </Card>
             ) : (
-              <ScrollArea className="h-[calc(100vh-220px)] mt-2">
-                <div className="space-y-3 pr-4">
-                  {linkedPapers.map((link) => (
-                    <LinkedPaperCard
-                      key={link.id}
-                      link={link}
-                      onUnlink={() => handleUnlinkPaper(link)}
-                      isUnlinking={isUnlinking}
-                      sourceBadgeColor={sourceBadgeColor}
-                    />
-                  ))}
-                </div>
-              </ScrollArea>
+              <div className="space-y-3 mt-2 overflow-y-auto max-h-[calc(100vh-240px)]">
+                {linkedPapers.map((link) => (
+                  <LinkedPaperCard
+                    key={link.id}
+                    link={link}
+                    onUnlink={() => handleUnlinkPaper(link)}
+                    isUnlinking={isUnlinking}
+                    sourceBadgeColor={sourceBadgeColor}
+                  />
+                ))}
+              </div>
             )}
           </TabsContent>
 
@@ -438,9 +436,10 @@ function LinkedPaperCard({
   isUnlinking: boolean;
   sourceBadgeColor: (s: string) => string;
 }) {
-  const paper = link.paper;
+  // paper can be null, undefined, or empty array [] depending on Supabase join
+  const paper = link.paper && !Array.isArray(link.paper) ? link.paper : null;
 
-  if (!paper) {
+  if (!paper || !paper.title) {
     return (
       <Card className="border-dashed border-destructive/40">
         <CardContent className="pt-3 pb-3 flex items-center justify-between gap-2">
