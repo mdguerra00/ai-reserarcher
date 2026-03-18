@@ -34,6 +34,7 @@ import { IndexingStatus } from '@/components/projects/IndexingStatus';
 import { ProjectAssistant } from '@/components/projects/ProjectAssistant';
 import { ProjectSettingsModal } from '@/components/projects/ProjectSettingsModal';
 import { useAuth } from '@/hooks/useAuth';
+import { useNotifications } from '@/hooks/useNotifications';
 
 type Project = Tables<'projects'>;
 
