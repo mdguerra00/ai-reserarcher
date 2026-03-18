@@ -59,6 +59,7 @@ export function KanbanColumn({ column, tasks, members, onTaskClick, unreadTaskId
               task={task}
               members={members}
               onClick={() => onTaskClick(task)}
+              hasUnreadComments={unreadTaskIds?.has(task.id)}
             />
           ))}
         </SortableContext>
