@@ -36,6 +36,7 @@ import {
   Pencil,
   Eye,
   Trash2,
+  Copy,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
@@ -43,6 +44,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { TaskDetailModal } from '@/components/tasks/TaskDetailModal';
 import { TaskEditModal } from '@/components/tasks/TaskEditModal';
+import { useDuplicateTask } from '@/hooks/useDuplicateTask';
 
 type Task = Tables<'tasks'> & {
   projects: { name: string } | null;
@@ -121,6 +123,8 @@ export default function Tasks() {
       setLoading(false);
     }
   };
+
+  const { duplicateTask, duplicating } = useDuplicateTask(fetchTasks);
 
   useEffect(() => {
     fetchTasks();
@@ -320,6 +324,13 @@ export default function Tasks() {
                         Editar
                       </DropdownMenuItem>
                       <DropdownMenuItem 
+                        disabled={duplicating}
+                        onClick={(e) => { e.stopPropagation(); duplicateTask(task); }}
+                      >
+                        <Copy className="mr-2 h-4 w-4" />
+                        Duplicar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
                         onClick={(e) => handleDeleteClick(e, task)}
                         className="text-destructive focus:text-destructive"
                       >
@@ -334,6 +345,7 @@ export default function Tasks() {
             );
           })}
 
+  
 
           {/* Pagination */}
           {totalPages > 1 && (
