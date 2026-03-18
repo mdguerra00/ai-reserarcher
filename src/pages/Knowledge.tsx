@@ -19,6 +19,7 @@ import { ExperimentDetailModal } from '@/components/knowledge/ExperimentDetailMo
 import { FactsList } from '@/components/knowledge/FactsList';
 import { ExtractionStatus } from '@/components/knowledge/ExtractionStatus';
 import { GlobalFileUploadModal } from '@/components/knowledge/GlobalFileUploadModal';
+import { AcademicSearchPanel } from '@/components/knowledge/AcademicSearchPanel';
 import {
   Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger,
 } from '@/components/ui/sheet';
@@ -381,7 +382,14 @@ export default function Knowledge() {
         <FactsList projects={projects || []} />
       )}
 
-      {entryType !== 'facts' && (
+      {/* Academic Search Section */}
+      {entryType === 'academic' && (
+        <AcademicSearchPanel
+          projectId={selectedProject && selectedProject !== '__global__' ? selectedProject : undefined}
+        />
+      )}
+
+      {entryType !== 'facts' && entryType !== 'academic' && (
       <>
       <ExtractionStatus />
 
