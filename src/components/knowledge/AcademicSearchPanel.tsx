@@ -97,6 +97,7 @@ export function AcademicSearchPanel({ projectId, researchId, className }: Academ
         paperId: paper.id,
         researchId,
         projectId,
+        doi: paper.doi,
       });
       toast.success('Artigo vinculado com sucesso');
     } catch (err) {
@@ -112,6 +113,8 @@ export function AcademicSearchPanel({ projectId, researchId, className }: Academ
         return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
       case 'openalex':
         return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+      case 'manual':
+        return 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200';
       default:
         return '';
     }

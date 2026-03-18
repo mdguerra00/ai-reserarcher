@@ -275,10 +275,11 @@ serve(async (req) => {
     // Limit results
     const finalPapers = deduplicated.slice(0, limit);
 
-    // Upsert papers into academic_papers table
+    // Upsert papers into academic_papers table and collect DB records with IDs
+    const savedPapers: any[] = [];
     for (const paper of finalPapers) {
       if (paper.doi) {
-        const { error: upsertError } = await supabase
+        const { data: upsertedData, error: upsertError } = await supabase
           .from("academic_papers")
           .upsert(
             {
@@ -296,12 +297,16 @@ serve(async (req) => {
               updated_at: new Date().toISOString(),
             },
             { onConflict: "doi" },
-          );
+          )
+          .select()
+          .single();
         if (upsertError) {
           console.warn("Upsert error for DOI", paper.doi, upsertError.message);
+        } else if (upsertedData) {
+          savedPapers.push(upsertedData);
         }
       } else {
-        const { error: insertError } = await supabase
+        const { data: insertedData, error: insertError } = await supabase
           .from("academic_papers")
           .insert({
             title: paper.title,
@@ -314,9 +319,13 @@ serve(async (req) => {
             api_data: paper.api_data,
             pdf_url: paper.pdf_url,
             open_access: paper.open_access,
-          });
+          })
+          .select()
+          .single();
         if (insertError) {
           console.warn("Insert error for paper", paper.title, insertError.message);
+        } else if (insertedData) {
+          savedPapers.push(insertedData);
         }
       }
     }
@@ -326,14 +335,14 @@ serve(async (req) => {
       user_id: user.id,
       query,
       source_apis: sourcesUsed,
-      results_count: finalPapers.length,
-      cached_results: finalPapers,
+      results_count: savedPapers.length,
+      cached_results: savedPapers,
     });
 
     return new Response(
       JSON.stringify({
-        papers: finalPapers,
-        total_results: finalPapers.length,
+        papers: savedPapers,
+        total_results: savedPapers.length,
         sources_used: sourcesUsed,
         cached: false,
       }),
