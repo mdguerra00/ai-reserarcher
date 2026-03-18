@@ -439,7 +439,21 @@ function LinkedPaperCard({
   sourceBadgeColor: (s: string) => string;
 }) {
   const paper = link.paper;
-  if (!paper) return null;
+
+  if (!paper) {
+    return (
+      <Card className="border-dashed border-destructive/40">
+        <CardContent className="pt-3 pb-3 flex items-center justify-between gap-2">
+          <p className="text-xs text-muted-foreground italic">Artigo com referencia quebrada</p>
+          <Button variant="ghost" size="sm" className="text-xs h-7 text-destructive hover:text-destructive shrink-0"
+            onClick={onUnlink} disabled={isUnlinking}>
+            {isUnlinking ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Trash2 className="h-3 w-3 mr-1" />}
+            Remover
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const authorsStr =
     paper.authors.length > 3
