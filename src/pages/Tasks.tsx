@@ -343,6 +343,7 @@ export default function Tasks() {
             );
           })}
 
+  const { duplicateTask, duplicating } = useDuplicateTask(fetchTasks);
 
           {/* Pagination */}
           {totalPages > 1 && (
