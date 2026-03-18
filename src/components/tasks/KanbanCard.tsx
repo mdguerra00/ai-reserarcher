@@ -29,7 +29,7 @@ interface KanbanCardProps {
   hasUnreadComments?: boolean;
 }
 
-export function KanbanCard({ task, members, onClick, isDragOverlay }: KanbanCardProps) {
+export function KanbanCard({ task, members, onClick, isDragOverlay, hasUnreadComments }: KanbanCardProps) {
   const { user } = useAuth();
   const {
     attributes,
