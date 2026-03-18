@@ -26,6 +26,7 @@ interface KanbanCardProps {
   members: MemberInfo[];
   onClick: () => void;
   isDragOverlay?: boolean;
+  hasUnreadComments?: boolean;
 }
 
 export function KanbanCard({ task, members, onClick, isDragOverlay }: KanbanCardProps) {
