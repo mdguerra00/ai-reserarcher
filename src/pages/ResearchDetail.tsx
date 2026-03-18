@@ -9,10 +9,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { ArrowLeft, Save, ArrowUpRight, FlaskConical } from 'lucide-react';
+import { ArrowLeft, Save, ArrowUpRight, FlaskConical, GraduationCap } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { ResearchPapersPanel } from '@/components/research/ResearchPapersPanel';
 
 const statusLabels: Record<string, string> = {
   draft: 'Rascunho',
@@ -38,6 +39,7 @@ export default function ResearchDetail() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showPromote, setShowPromote] = useState(false);
+  const [showPapers, setShowPapers] = useState(false);
   const [form, setForm] = useState<any>({});
   const [products, setProducts] = useState<any[]>([]);
 
@@ -152,6 +154,10 @@ export default function ResearchDetail() {
           </div>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setShowPapers(true)}>
+            <GraduationCap className="mr-2 h-4 w-4" />
+            Artigos
+          </Button>
           {form.status === 'concluded' && (
             <Button variant="outline" onClick={() => setShowPromote(true)}>
               <ArrowUpRight className="mr-2 h-4 w-4" />
@@ -297,6 +303,14 @@ export default function ResearchDetail() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Academic Papers Panel */}
+      <ResearchPapersPanel
+        open={showPapers}
+        onOpenChange={setShowPapers}
+        researchId={id!}
+        projectId={research.project_id}
+      />
     </div>
   );
 }
