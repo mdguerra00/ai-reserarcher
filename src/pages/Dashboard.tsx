@@ -37,13 +37,7 @@ export default function Dashboard() {
         .is('deleted_at', null);
 
       const totalProjects = projects?.length || 0;
-      const activeProjectsByStatus = projects?.filter((p) => isActiveProjectStatus(p.status)).length || 0;
-      const activeProjectsFromMyTasks = new Set(
-        (tasks || [])
-          .filter((t) => t.assigned_to === user!.id && t.project_id)
-          .map((t) => t.project_id)
-      ).size;
-      const activeProjects = Math.max(activeProjectsByStatus, activeProjectsFromMyTasks);
+      const activeProjects = projects?.filter((p) => isActiveProjectStatus(p.status)).length || 0;
       const totalTasks = tasks?.length || 0;
       const pendingTasks = tasks?.filter(t => t.status === 'todo' || t.status === 'in_progress').length || 0;
       const myTasks = tasks?.filter(t => t.assigned_to === user!.id && (t.status === 'todo' || t.status === 'in_progress')).length || 0;
