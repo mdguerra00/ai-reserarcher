@@ -440,6 +440,12 @@ function SearchResultCard({
               <ExternalLink className="h-2.5 w-2.5" /> DOI
             </a>
           )}
+          {paper.pdf_url && (
+            <a href={paper.pdf_url} target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-[10px] text-primary hover:underline">
+              <ExternalLink className="h-2.5 w-2.5" /> PDF
+            </a>
+          )}
           {alreadyLinked ? (
             <Badge variant="secondary" className="ml-auto text-xs">
               <Link2 className="h-3 w-3 mr-1" /> Vinculado
