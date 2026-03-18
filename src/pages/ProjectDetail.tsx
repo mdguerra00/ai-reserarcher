@@ -100,6 +100,18 @@ export default function ProjectDetail() {
   const [activeTab, setActiveTab] = useState('tasks');
   const [initialFileId, setInitialFileId] = useState<string | null>(null);
 
+  // Compute set of task IDs with unread comment notifications
+  const unreadTaskIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const n of notifications) {
+      if (n.type === 'task_comment' && !n.read && n.link) {
+        const match = n.link.match(/task=([a-f0-9-]+)/);
+        if (match) ids.add(match[1]);
+      }
+    }
+    return ids;
+  }, [notifications]);
+
   const isOwner = userRole === 'owner';
 
   useEffect(() => {
