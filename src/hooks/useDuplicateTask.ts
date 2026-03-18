@@ -16,7 +16,7 @@ interface DuplicatableTask {
   target_metrics?: string[];
   success_criteria?: string | null;
   procedure?: string | null;
-  checklist?: any[];
+  checklist?: any;
   external_links?: string[];
 }
 

@@ -89,7 +89,6 @@ export default function Tasks() {
   const [deleteTask, setDeleteTask] = useState<Task | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const { duplicateTask, duplicating } = useDuplicateTask(fetchTasks);
 
   const fetchTasks = async () => {
     try {
