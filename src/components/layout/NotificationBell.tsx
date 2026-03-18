@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Check, CheckCheck, Trash2, Info, CheckSquare, FileText, AlertTriangle } from 'lucide-react';
+import { Bell, Check, CheckCheck, Trash2, Info, CheckSquare, FileText, AlertTriangle, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -14,6 +14,7 @@ import { ptBR } from 'date-fns/locale';
 
 const typeIcons: Record<string, React.ElementType> = {
   task_assigned: CheckSquare,
+  task_comment: MessageSquare,
   report_approved: FileText,
   report_submitted: FileText,
   warning: AlertTriangle,

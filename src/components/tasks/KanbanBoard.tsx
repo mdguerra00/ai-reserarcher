@@ -74,6 +74,7 @@ interface KanbanBoardProps {
   onTaskClick: (task: KanbanTask) => void;
   onTasksChange: () => void;
   onBlockedReasonRequired: (taskId: string, targetColumnId: string) => void;
+  unreadTaskIds?: Set<string>;
 }
 
 export function KanbanBoard({
@@ -83,6 +84,7 @@ export function KanbanBoard({
   onTaskClick,
   onTasksChange,
   onBlockedReasonRequired,
+  unreadTaskIds,
 }: KanbanBoardProps) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -278,6 +280,7 @@ export function KanbanBoard({
               tasks={columnTasks}
               members={members}
               onTaskClick={onTaskClick}
+              unreadTaskIds={unreadTaskIds}
             />
           );
         })}

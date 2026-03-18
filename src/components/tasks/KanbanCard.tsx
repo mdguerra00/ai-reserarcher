@@ -3,7 +3,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Calendar, AlertTriangle, Lock, Eye } from 'lucide-react';
+import { Calendar, AlertTriangle, Lock, Eye, MessageSquare } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import type { KanbanTask } from './KanbanBoard';
 
@@ -26,9 +26,10 @@ interface KanbanCardProps {
   members: MemberInfo[];
   onClick: () => void;
   isDragOverlay?: boolean;
+  hasUnreadComments?: boolean;
 }
 
-export function KanbanCard({ task, members, onClick, isDragOverlay }: KanbanCardProps) {
+export function KanbanCard({ task, members, onClick, isDragOverlay, hasUnreadComments }: KanbanCardProps) {
   const { user } = useAuth();
   const {
     attributes,
@@ -143,16 +144,33 @@ export function KanbanCard({ task, members, onClick, isDragOverlay }: KanbanCard
         </div>
       )}
 
-      {/* Footer: due date + assignee */}
+      {/* Footer: due date + comment indicator + assignee */}
       <div className="flex items-center justify-between mt-1">
-        {task.due_date ? (
-          <span className={`flex items-center gap-1 text-[11px] ${isOverdue ? 'text-warning font-medium' : 'text-muted-foreground'}`}>
-            <Calendar className="h-3 w-3" />
-            {new Date(task.due_date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
-          </span>
-        ) : (
-          <span />
-        )}
+        <div className="flex items-center gap-2">
+          {task.due_date ? (
+            <span className={`flex items-center gap-1 text-[11px] ${isOverdue ? 'text-warning font-medium' : 'text-muted-foreground'}`}>
+              <Calendar className="h-3 w-3" />
+              {new Date(task.due_date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+            </span>
+          ) : (
+            <span />
+          )}
+          {hasUnreadComments && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="relative flex items-center text-muted-foreground">
+                    <MessageSquare className="h-3.5 w-3.5" />
+                    <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-destructive" />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Novas mensagens nesta tarefa</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        </div>
 
         {assignee && (
           <Avatar className="h-5 w-5">

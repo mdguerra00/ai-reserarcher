@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -34,6 +34,7 @@ import { IndexingStatus } from '@/components/projects/IndexingStatus';
 import { ProjectAssistant } from '@/components/projects/ProjectAssistant';
 import { ProjectSettingsModal } from '@/components/projects/ProjectSettingsModal';
 import { useAuth } from '@/hooks/useAuth';
+import { useNotifications } from '@/hooks/useNotifications';
 
 type Project = Tables<'projects'>;
 
@@ -74,6 +75,7 @@ export default function ProjectDetail() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { notifications, markAsRead } = useNotifications();
   const { toast } = useToast();
   const [project, setProject] = useState<Project | null>(null);
   const [members, setMembers] = useState<MemberWithProfile[]>([]);
@@ -97,6 +99,18 @@ export default function ProjectDetail() {
   // Tab control
   const [activeTab, setActiveTab] = useState('tasks');
   const [initialFileId, setInitialFileId] = useState<string | null>(null);
+
+  // Compute set of task IDs with unread comment notifications
+  const unreadTaskIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const n of notifications) {
+      if (n.type === 'task_comment' && !n.read && n.link) {
+        const match = n.link.match(/task=([a-f0-9-]+)/);
+        if (match) ids.add(match[1]);
+      }
+    }
+    return ids;
+  }, [notifications]);
 
   const isOwner = userRole === 'owner';
 
@@ -289,6 +303,10 @@ export default function ProjectDetail() {
   const handleTaskClick = (task: KanbanTask) => {
     setSelectedTask(task);
     setIsTaskDetailOpen(true);
+    // Mark task_comment notifications as read for this task
+    notifications
+      .filter(n => n.type === 'task_comment' && !n.read && n.link?.includes(`task=${task.id}`))
+      .forEach(n => markAsRead(n.id));
   };
 
   const handleBlockedReasonRequired = (taskId: string, columnId: string) => {
@@ -535,6 +553,7 @@ export default function ProjectDetail() {
               onTaskClick={handleTaskClick}
               onTasksChange={refreshTasks}
               onBlockedReasonRequired={handleBlockedReasonRequired}
+              unreadTaskIds={unreadTaskIds}
             />
           ) : (
             /* List view (simplified) */

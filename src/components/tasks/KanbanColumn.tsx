@@ -16,9 +16,10 @@ interface KanbanColumnProps {
   tasks: KanbanTask[];
   members: MemberInfo[];
   onTaskClick: (task: KanbanTask) => void;
+  unreadTaskIds?: Set<string>;
 }
 
-export function KanbanColumn({ column, tasks, members, onTaskClick }: KanbanColumnProps) {
+export function KanbanColumn({ column, tasks, members, onTaskClick, unreadTaskIds }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: column.id });
 
   const taskIds = tasks.map(t => t.id);
@@ -58,6 +59,7 @@ export function KanbanColumn({ column, tasks, members, onTaskClick }: KanbanColu
               task={task}
               members={members}
               onClick={() => onTaskClick(task)}
+              hasUnreadComments={unreadTaskIds?.has(task.id)}
             />
           ))}
         </SortableContext>
