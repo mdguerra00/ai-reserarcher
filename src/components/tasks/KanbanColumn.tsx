@@ -16,6 +16,7 @@ interface KanbanColumnProps {
   tasks: KanbanTask[];
   members: MemberInfo[];
   onTaskClick: (task: KanbanTask) => void;
+  unreadTaskIds?: Set<string>;
 }
 
 export function KanbanColumn({ column, tasks, members, onTaskClick }: KanbanColumnProps) {
