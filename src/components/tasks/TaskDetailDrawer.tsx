@@ -127,6 +127,9 @@ export function TaskDetailDrawer({
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
   const [editTitle, setEditTitle] = useState('');
+  const { duplicateTask, duplicating } = useDuplicateTask(() => {
+    onUpdate();
+  });
   
   // R&D fields
   const [hypothesis, setHypothesis] = useState('');
