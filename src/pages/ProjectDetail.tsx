@@ -303,6 +303,10 @@ export default function ProjectDetail() {
   const handleTaskClick = (task: KanbanTask) => {
     setSelectedTask(task);
     setIsTaskDetailOpen(true);
+    // Mark task_comment notifications as read for this task
+    notifications
+      .filter(n => n.type === 'task_comment' && !n.read && n.link?.includes(`task=${task.id}`))
+      .forEach(n => markAsRead(n.id));
   };
 
   const handleBlockedReasonRequired = (taskId: string, columnId: string) => {
