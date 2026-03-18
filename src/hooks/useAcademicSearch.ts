@@ -18,20 +18,59 @@ export function useAcademicSearch() {
         body: params,
       });
       if (error) throw new Error(error.message || 'Erro ao buscar artigos');
-      return data as AcademicSearchResult;
+      const result = data as AcademicSearchResult;
+
+      // If papers don't have DB IDs (old edge function), resolve them by DOI
+      const papersNeedIds = result.papers.some((p) => !p.id);
+      if (papersNeedIds) {
+        const dois = result.papers.map((p) => p.doi).filter(Boolean) as string[];
+        if (dois.length > 0) {
+          const { data: dbPapers } = await supabase
+            .from('academic_papers')
+            .select('*')
+            .in('doi', dois);
+          if (dbPapers) {
+            const doiMap = new Map(dbPapers.map((p: any) => [p.doi, p]));
+            result.papers = result.papers.map((p) => {
+              if (p.id) return p;
+              const dbPaper = p.doi ? doiMap.get(p.doi) : null;
+              return dbPaper ? { ...p, ...dbPaper } : p;
+            });
+          }
+        }
+      }
+
+      return result;
     },
   });
 
   const linkPaperMutation = useMutation<
     AcademicPaperLink,
     Error,
-    { paperId: string; researchId: string; projectId?: string; notes?: string }
+    { paperId: string; researchId: string; projectId?: string; notes?: string; doi?: string | null }
   >({
-    mutationFn: async ({ paperId, researchId, projectId, notes }) => {
+    mutationFn: async ({ paperId, researchId, projectId, notes, doi }) => {
+      let resolvedPaperId = paperId;
+
+      // If paperId doesn't look like a UUID, try to resolve by DOI
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(paperId) && doi) {
+        const { data: dbPaper } = await supabase
+          .from('academic_papers')
+          .select('id')
+          .eq('doi', doi)
+          .single();
+        if (dbPaper) {
+          resolvedPaperId = dbPaper.id;
+        } else {
+          throw new Error('Artigo nao encontrado no banco de dados');
+        }
+      }
+
       const { data, error } = await supabase
         .from('academic_paper_links')
         .insert({
-          paper_id: paperId,
+          paper_id: resolvedPaperId,
           research_id: researchId,
           project_id: projectId || null,
           linked_by: user?.id,
@@ -41,6 +80,52 @@ export function useAcademicSearch() {
         .single();
       if (error) throw error;
       return data as AcademicPaperLink;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ['linked-papers', variables.researchId],
+      });
+    },
+  });
+
+  const addManualPaperMutation = useMutation<
+    AcademicPaper,
+    Error,
+    { paper: Omit<AcademicPaper, 'id' | 'created_at' | 'updated_at'>; researchId: string; projectId?: string }
+  >({
+    mutationFn: async ({ paper, researchId, projectId }) => {
+      // Insert paper
+      const { data: savedPaper, error: paperError } = await supabase
+        .from('academic_papers')
+        .insert({
+          doi: paper.doi || null,
+          title: paper.title,
+          authors: paper.authors,
+          abstract: paper.abstract || null,
+          publication_year: paper.publication_year || null,
+          journal: paper.journal || null,
+          citation_count: paper.citation_count || 0,
+          source_api: 'manual',
+          api_data: {},
+          pdf_url: paper.pdf_url || null,
+          open_access: paper.open_access || false,
+        })
+        .select()
+        .single();
+      if (paperError) throw paperError;
+
+      // Link to research
+      const { error: linkError } = await supabase
+        .from('academic_paper_links')
+        .insert({
+          paper_id: savedPaper.id,
+          research_id: researchId,
+          project_id: projectId || null,
+          linked_by: user?.id,
+        });
+      if (linkError) throw linkError;
+
+      return savedPaper as AcademicPaper;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
@@ -92,6 +177,8 @@ export function useAcademicSearch() {
     isLinking: linkPaperMutation.isPending,
     unlinkPaper: unlinkPaperMutation.mutateAsync,
     isUnlinking: unlinkPaperMutation.isPending,
+    addManualPaper: addManualPaperMutation.mutateAsync,
+    isAddingManual: addManualPaperMutation.isPending,
     useLinkedPapers,
   };
 }

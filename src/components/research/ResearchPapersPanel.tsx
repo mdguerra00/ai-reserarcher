@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Search,
   ExternalLink,
@@ -22,6 +23,8 @@ import {
   Loader2,
   GraduationCap,
   Trash2,
+  Plus,
+  FilePlus,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAcademicSearch } from '@/hooks/useAcademicSearch';
@@ -50,6 +53,8 @@ export function ResearchPapersPanel({ open, onOpenChange, researchId, projectId 
     isLinking,
     unlinkPaper,
     isUnlinking,
+    addManualPaper,
+    isAddingManual,
     useLinkedPapers,
   } = useAcademicSearch();
 
@@ -63,6 +68,15 @@ export function ResearchPapersPanel({ open, onOpenChange, researchId, projectId 
   const [yearTo, setYearTo] = useState('');
   const [openAccessOnly, setOpenAccessOnly] = useState(false);
   const [activeTab, setActiveTab] = useState('linked');
+
+  // Manual entry form state
+  const [manualTitle, setManualTitle] = useState('');
+  const [manualAuthors, setManualAuthors] = useState('');
+  const [manualDoi, setManualDoi] = useState('');
+  const [manualYear, setManualYear] = useState('');
+  const [manualJournal, setManualJournal] = useState('');
+  const [manualAbstract, setManualAbstract] = useState('');
+  const [manualPdfUrl, setManualPdfUrl] = useState('');
 
   const handleSourceToggle = (source: 'crossref' | 'semantic_scholar' | 'openalex') => {
     setSources((prev) => {
@@ -100,7 +114,7 @@ export function ResearchPapersPanel({ open, onOpenChange, researchId, projectId 
 
   const handleLinkPaper = async (paper: AcademicPaper) => {
     try {
-      await linkPaper({ paperId: paper.id, researchId, projectId });
+      await linkPaper({ paperId: paper.id, researchId, projectId, doi: paper.doi });
       toast.success('Artigo vinculado!');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Erro ao vincular');
@@ -116,6 +130,44 @@ export function ResearchPapersPanel({ open, onOpenChange, researchId, projectId 
     }
   };
 
+  const handleAddManual = async () => {
+    if (!manualTitle.trim()) {
+      toast.error('O titulo e obrigatorio');
+      return;
+    }
+    try {
+      await addManualPaper({
+        paper: {
+          doi: manualDoi.trim() || null,
+          title: manualTitle.trim(),
+          authors: manualAuthors.split(',').map((a) => a.trim()).filter(Boolean),
+          abstract: manualAbstract.trim() || null,
+          publication_year: manualYear ? parseInt(manualYear) : null,
+          journal: manualJournal.trim() || null,
+          citation_count: 0,
+          source_api: 'manual',
+          api_data: {},
+          pdf_url: manualPdfUrl.trim() || null,
+          open_access: false,
+        },
+        researchId,
+        projectId,
+      });
+      toast.success('Artigo adicionado e vinculado!');
+      // Reset form
+      setManualTitle('');
+      setManualAuthors('');
+      setManualDoi('');
+      setManualYear('');
+      setManualJournal('');
+      setManualAbstract('');
+      setManualPdfUrl('');
+      setActiveTab('linked');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erro ao adicionar artigo');
+    }
+  };
+
   const isAlreadyLinked = (paperId: string) =>
     linkedPapers?.some((lp) => lp.paper_id === paperId) ?? false;
 
@@ -124,6 +176,7 @@ export function ResearchPapersPanel({ open, onOpenChange, researchId, projectId 
       case 'crossref': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
       case 'semantic_scholar': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
       case 'openalex': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+      case 'manual': return 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200';
       default: return '';
     }
   };
@@ -149,7 +202,11 @@ export function ResearchPapersPanel({ open, onOpenChange, researchId, projectId 
             </TabsTrigger>
             <TabsTrigger value="search" className="flex-1">
               <Search className="h-4 w-4 mr-2" />
-              Buscar Novos
+              Buscar
+            </TabsTrigger>
+            <TabsTrigger value="manual" className="flex-1">
+              <FilePlus className="h-4 w-4 mr-2" />
+              Manual
             </TabsTrigger>
           </TabsList>
 
@@ -301,6 +358,67 @@ export function ResearchPapersPanel({ open, onOpenChange, researchId, projectId 
                 </Card>
               )}
             </div>
+          </TabsContent>
+
+          {/* Manual Entry Tab */}
+          <TabsContent value="manual" className="flex-1 min-h-0">
+            <ScrollArea className="h-[calc(100vh-220px)] mt-2">
+              <div className="space-y-3 pr-4">
+                <p className="text-xs text-muted-foreground">
+                  Adicione manualmente artigos que voce obteve via acesso institucional ou outras fontes.
+                </p>
+
+                <div className="space-y-2">
+                  <div>
+                    <Label htmlFor="manual-title" className="text-xs">Titulo *</Label>
+                    <Input id="manual-title" placeholder="Titulo do artigo" value={manualTitle}
+                      onChange={(e) => setManualTitle(e.target.value)} className="h-8 text-sm" />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="manual-authors" className="text-xs">Autores (separados por virgula)</Label>
+                    <Input id="manual-authors" placeholder="Autor 1, Autor 2, Autor 3" value={manualAuthors}
+                      onChange={(e) => setManualAuthors(e.target.value)} className="h-8 text-sm" />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label htmlFor="manual-doi" className="text-xs">DOI</Label>
+                      <Input id="manual-doi" placeholder="10.1234/exemplo" value={manualDoi}
+                        onChange={(e) => setManualDoi(e.target.value)} className="h-8 text-sm" />
+                    </div>
+                    <div>
+                      <Label htmlFor="manual-year" className="text-xs">Ano</Label>
+                      <Input id="manual-year" type="number" placeholder="2024" value={manualYear}
+                        onChange={(e) => setManualYear(e.target.value)} className="h-8 text-sm" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="manual-journal" className="text-xs">Revista / Journal</Label>
+                    <Input id="manual-journal" placeholder="Nome da revista" value={manualJournal}
+                      onChange={(e) => setManualJournal(e.target.value)} className="h-8 text-sm" />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="manual-pdf" className="text-xs">URL do PDF</Label>
+                    <Input id="manual-pdf" placeholder="https://..." value={manualPdfUrl}
+                      onChange={(e) => setManualPdfUrl(e.target.value)} className="h-8 text-sm" />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="manual-abstract" className="text-xs">Resumo / Abstract</Label>
+                    <Textarea id="manual-abstract" placeholder="Resumo do artigo..." value={manualAbstract}
+                      onChange={(e) => setManualAbstract(e.target.value)} className="text-sm min-h-[80px]" />
+                  </div>
+
+                  <Button onClick={handleAddManual} disabled={isAddingManual || !manualTitle.trim()} className="w-full">
+                    {isAddingManual ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
+                    Adicionar e Vincular
+                  </Button>
+                </div>
+              </div>
+            </ScrollArea>
           </TabsContent>
         </Tabs>
       </SheetContent>
