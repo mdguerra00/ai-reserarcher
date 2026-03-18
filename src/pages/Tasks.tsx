@@ -44,6 +44,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { TaskDetailModal } from '@/components/tasks/TaskDetailModal';
 import { TaskEditModal } from '@/components/tasks/TaskEditModal';
+import { useDuplicateTask } from '@/hooks/useDuplicateTask';
 
 type Task = Tables<'tasks'> & {
   projects: { name: string } | null;
