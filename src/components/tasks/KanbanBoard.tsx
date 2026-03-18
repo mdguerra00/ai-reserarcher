@@ -280,6 +280,7 @@ export function KanbanBoard({
               tasks={columnTasks}
               members={members}
               onTaskClick={onTaskClick}
+              unreadTaskIds={unreadTaskIds}
             />
           );
         })}
