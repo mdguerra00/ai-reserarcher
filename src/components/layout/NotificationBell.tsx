@@ -14,6 +14,7 @@ import { ptBR } from 'date-fns/locale';
 
 const typeIcons: Record<string, React.ElementType> = {
   task_assigned: CheckSquare,
+  task_comment: MessageSquare,
   report_approved: FileText,
   report_submitted: FileText,
   warning: AlertTriangle,
