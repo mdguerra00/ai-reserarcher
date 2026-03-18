@@ -75,6 +75,7 @@ export default function ProjectDetail() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { notifications, markAsRead } = useNotifications();
   const { toast } = useToast();
   const [project, setProject] = useState<Project | null>(null);
   const [members, setMembers] = useState<MemberWithProfile[]>([]);
